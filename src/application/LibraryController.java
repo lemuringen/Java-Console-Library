@@ -24,11 +24,16 @@ public class LibraryController {
 	private final String CHECK_OUT_ERROR = "Syntax error: If you mean to check out media. Type \"checkout [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to check out. ";
 	private final String DEREGISTER_ERROR = "Syntax error: If you mean to deregister media from library database. Type \"deregister [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to deregister. ";
 	private final String REGISTER_ERROR = "Syntax error: If you mean to register media. Type \"register\" without quotation marks. ";
-	private final String INFO_ERROR = "Syntax error: If you mean to view extended information about a media. Type \"checkout [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to read more about. ";
+	private final String INFO_ERROR = "Syntax error: If you mean to view extended information about a media. Type \"info [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to read more about. ";
 	private final String LIST_ERROR = "Syntax error. Type \"list\" without quotation marks if you mean to view library contents. ";
 	private final String QUIT_ERROR = "Syntax error. Type \"quit\" without quotation marks if you mean to quit. ";
+	private final String SYNTAX_ERROR = "Syntax error: Give only one argument and keep in mind that article numbers can only contain integers. ";
 	private final String PROMPT = "> ";
-
+	private final String BAD_ARTICLE_NUMBER = "No media with the given article number can't be found in the library. ";
+	private final String DOUBLE_REGISTER = "A media with the given article number already exists in the library. ";
+	private final String DOUBLE_CHECKOUT = "The media corresponding to the given article number is already checked out. ";
+	private final String DOUBLE_CHECKIN = "The media corresponding to the given article number is already checked in. ";
+	private final String UNKOWN_COMMAND = "Java Console Library can't recognise any command in the given input. ";
 	public LibraryController(Library lib) {
 		this.setLib(lib);
 		this.libPath = ".\\bin\\application\\Library Contents\\lib.csv";
@@ -44,26 +49,82 @@ public class LibraryController {
 		} else if (argument != null && isExistingArticleNumber(Integer.decode(argument))) { // if no error and we have
 																							// argument and argument is
 																							// valid article number
-			handleCommand(cmnd.getCommand(), Integer.decode(argument)); // TODO needs to make individual checks for many commands ie: islended, exists
+			if (isLended(Integer.decode(argument)) && cmnd.getCommand() == CommandInterpreter.Command.CHECKOUT) { // if
+																													// we
+				handleDoubleCheckOut();
+			} else if (!isLended(Integer.decode(argument)) && cmnd.getCommand() == CommandInterpreter.Command.CHECKIN) {
+				handleDoubleCheckIn();
+			} else {
+				handleCommand(cmnd.getCommand(), Integer.decode(argument)); // should it be possible to deregister a
+																			// lended media?
+			}
 		} else if (argument != null && !isExistingArticleNumber(Integer.decode(argument))) { // if no error and we have
-																								// argument and argument
-																								// is invalid article
-																								// number
+					//info 																		// argument and argument
+																							// is invalid article
+																							// number
 			handleBadArticleNumber(cmnd);
 		} else {
 			handleCommand(cmnd.getCommand()); // if we have command without errors and no arguments
 		}
 	}
-	public void init() { //stuff that needs to be done before running
+
+	public void init() { // stuff that needs to be done before running
 		loadLibarary();
 	}
 
-	public void handleError(CommandInterpreter cmnd) {
+	public void handleDoubleCheckIn() {
+		System.out.println(DOUBLE_CHECKIN);
+	}
 
+	public void handleDoubleCheckOut() {
+
+		System.out.println(DOUBLE_CHECKOUT);
+	}
+
+	public void handleBadArticleNumber(CommandInterpreter cmnd) {
+		System.out.println(BAD_ARTICLE_NUMBER);
+	}
+
+	public void handleError(CommandInterpreter cmnd) {
+		switch (cmnd.getError()) {
+		case UNKNOWN_COMMAND:
+			System.out.println(this.UNKOWN_COMMAND); //TODO should probably have separate name from the Error constant
+			break;
+		case INVALID_ARGUMENT:
+			System.out.println(SYNTAX_ERROR);
+			break;
+		case LIST_ARGUMENT:
+			System.out.println(LIST_ERROR);
+			break;
+		case CHECKOUT_NO_ARGUMENT:
+			System.out.println(CHECK_OUT_ERROR);
+			break;
+		case CHECKIN_NO_ARGUMENT:
+			System.out.println(CHECK_IN_ERROR);
+			break;
+		case REGISTER_ARGUMENT:
+			System.out.println(REGISTER_ERROR);
+			break;
+		case DEREGISTER_NO_ARGUMENT:
+			System.out.println(DEREGISTER_ERROR);
+			break;
+		case INFO_NO_ARGUMENT:
+			System.out.print(INFO_ERROR);
+			break;
+		case QUIT_ARGUMENT:
+			System.out.println(QUIT_ERROR);
+			break;
+
+		}
+	}
+
+	public boolean isLended(Integer articleNumber) {
+		// this.lib.getMedia(articleNumber)
+		return false;
 	}
 
 	public void handleCommand(CommandInterpreter.Command command, Integer articleNumber) {
-		switch(command) {
+		switch (command) {
 		case CHECKIN:
 			break;
 		case CHECKOUT:
@@ -76,29 +137,45 @@ public class LibraryController {
 	}
 
 	public void handleCommand(CommandInterpreter.Command command) {
-		switch(command) {
+		switch (command) {
 		case QUIT:
 			setRunning(false);
 			break;
 		case LIST:
+			// print all stored contents in library
 			break;
 		case REGISTER:
+			registerNewMedia();
 			break;
 		}
+	}
+	public void registerNewMedia() { //TODO might be able to set avoid hardcoding the LendableMedia types
+		System.out.println("Would you like to register a book or a movie? "); 
+		String input = getInput();
+		if(input.equals("BOOK")) {
+			registerNewBook();
+		}else if(input.equals("MOVIE")) {
+			registerNewMovie();
+		}else {
+			System.out.println("Invalid input. ");
+			registerNewMedia();
+		}
+	}
+	public void registerNewBook() {
+		//TODO Book needs to be implemented first
+	}
+	public void registerNewMovie() {
+		//TODO Movie needs to be implemented first
 	}
 
 	public boolean isExistingArticleNumber(Integer articleNumber) { // TODO tmo
 		return false;
 	}
 
-	public void handleBadArticleNumber(CommandInterpreter cmnd) {
-
-	}
-
 	public String getInput() {// any formating?
 		Scanner scn = new Scanner(System.in);
 		String input = scn.nextLine();
-		if (input.length() == 0)
+		if (input.length() == 0) // no empty strings allowed, no dialogue needed
 			return getInput();
 		input = input.toUpperCase();
 		return input;

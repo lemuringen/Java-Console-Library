@@ -14,7 +14,7 @@ public class CommandInterpreter {
 	}
 
 	public enum Error { // General errors that might emerge from using the commands
-		// TODO we should check
+		// TODO SYNTAX_ERROR is never used!
 		SYNTAX_ERROR, UNKNOWN_COMMAND, INVALID_ARGUMENT, LIST_ARGUMENT, CHECKOUT_NO_ARGUMENT, CHECKIN_NO_ARGUMENT,
 		REGISTER_ARGUMENT, DEREGISTER_NO_ARGUMENT, INFO_NO_ARGUMENT, QUIT_ARGUMENT, NO_ERROR
 	}
@@ -31,7 +31,7 @@ public class CommandInterpreter {
 		String[] splitInput = { input }; // TODO ugly workaround
 		this.splitInput = splitInput;
 		if (input.contains(" "))
-			splitInput = input.split("[ ]");
+			this.splitInput = input.split("[ ]");
 	}
 
 	public void processCommand() {
