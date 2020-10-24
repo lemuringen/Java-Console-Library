@@ -6,8 +6,10 @@ public class LibraryMain {
 		Library lib = new Library();
 		LibraryController libController = new LibraryController(lib);
 		libController.saveLibrary();
-		libController.loadLibarary();
-		libController.queryUserCommand();
+		libController.setRunning(true);;
+		while (libController.isRunning()) {
+			libController.queryUserCommand();
+		}
 	}
 
 }

@@ -1,7 +1,7 @@
 package application;
 
 import java.io.File;
-import java.util.regex.*; 
+import java.util.regex.*;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -11,6 +11,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+
+import application.CommandInterpreter.Command;
 
 public class LibraryController {
 	private Library lib;
@@ -26,109 +28,78 @@ public class LibraryController {
 	private final String LIST_ERROR = "Syntax error. Type \"list\" without quotation marks if you mean to view library contents. ";
 	private final String QUIT_ERROR = "Syntax error. Type \"quit\" without quotation marks if you mean to quit. ";
 	private final String PROMPT = "> ";
+
 	public LibraryController(Library lib) {
 		this.setLib(lib);
 		this.libPath = ".\\bin\\application\\Library Contents\\lib.csv";
 	}
 
-	public void queryUserCommand() { // should probably be split into mutliple functions
-		System.out.println(PROMPT); // TODO need to figure out where to check article numbers
-		String input = getInput();
-		String[] splitInput = { input };
-		if (input.contains(" "))
-			splitInput = input.split("[ ]"); //separate command from argument if two words (not all commands uses arguments)
-		
-		if (input.contains(Command.CHECKIN.name())) {
-			if (splitInput.length == 2 && splitInput[0].equals(Command.CHECKIN.name()) && isNumber(splitInput[1])) {
-				checkIn();
-			} else {
-				System.out.println(CHECK_IN_ERROR);
-				queryUserCommand();
-			}
-		} else if (input.contains(Command.CHECKOUT.name())) {
-			if (splitInput.length == 2 && splitInput[0].equals(Command.CHECKOUT.name()) && isNumber(splitInput[1])) {
-				checkOut();
-			} else {
-				System.out.println(CHECK_OUT_ERROR);
-				queryUserCommand();
-			}
-		} else if (input.contains(Command.DEREGISTER.name())) {
-			if (splitInput.length == 2 && splitInput[0].equals(Command.DEREGISTER.name()) && isNumber(splitInput[1])) {
-				deregister();
-			} else {
-				System.out.println(DEREGISTER_ERROR);
-				queryUserCommand();
-			}
-		} else if (input.contains(Command.REGISTER.name())) {
-			if (input.equals(Command.REGISTER.name())) {
-				register();
-			} else {
-				System.out.println(REGISTER_ERROR);
-				queryUserCommand();
-			}
-		} else if (input.contains(Command.INFO.name())) {
-			if (splitInput.length == 2 && splitInput[0].equals(Command.INFO.name()) && isNumber(splitInput[1])) {
-				info();
-			} else {
-				System.out.println(INFO_ERROR);
-				queryUserCommand();
-			}
-		} else if (input.contains(Command.LIST.name())) {
-			if (input.equals(Command.LIST.name())) {
-				printContents(); // TODO view all LendableMedia stored at library
-			} else {
-				System.out.println(LIST_ERROR);
-				queryUserCommand();
-			}
-		} else if (input.contains(Command.QUIT.name())) {
-			if (input.equals(Command.QUIT.name())) {
-				exit();
-			} else {
-				System.out.println(QUIT_ERROR);
-				queryUserCommand();
-			}
-		} else { // TODO check for unknown commands
-			System.out.print("Syntax error");
-			queryUserCommand();
+	public void queryUserCommand() {
+		System.out.println(PROMPT);
+		CommandInterpreter cmnd = new CommandInterpreter(getInput());
+		cmnd.processCommand();
+		String argument = cmnd.getArgument();
+		if (cmnd.getError() != CommandInterpreter.Error.NO_ERROR) { // if we have error
+			handleError(cmnd);
+		} else if (argument != null && isExistingArticleNumber(Integer.decode(argument))) { // if no error and we have
+																							// argument and argument is
+																							// valid article number
+			handleCommand(cmnd.getCommand(), Integer.decode(argument)); // TODO needs to make individual checks for many commands ie: islended, exists
+		} else if (argument != null && !isExistingArticleNumber(Integer.decode(argument))) { // if no error and we have
+																								// argument and argument
+																								// is invalid article
+																								// number
+			handleBadArticleNumber(cmnd);
+		} else {
+			handleCommand(cmnd.getCommand()); // if we have command without errors and no arguments
 		}
 	}
-	private boolean isNumber(String number) {
-		if(number.length() == 0) return false; // without this check empty strings [""] will return true
-		return Pattern.matches("\\d{" + number.length() + "}", number);
+	public void init() { //stuff that needs to be done before running
+		loadLibarary();
 	}
 
-	public void exit() { // exit application
-		this.isRunning = false;
-	}
-
-	public void checkIn() { // checkin a lended book back to the library
+	public void handleError(CommandInterpreter cmnd) {
 
 	}
 
-	public void checkOut() { // checkout a book to a new lender(person object)
-
+	public void handleCommand(CommandInterpreter.Command command, Integer articleNumber) {
+		switch(command) {
+		case CHECKIN:
+			break;
+		case CHECKOUT:
+			break;
+		case DEREGISTER:
+			break;
+		case INFO:
+			break;
+		}
 	}
 
-	public void printContents() { // view a list of all the contents stored at the library
-
+	public void handleCommand(CommandInterpreter.Command command) {
+		switch(command) {
+		case QUIT:
+			setRunning(false);
+			break;
+		case LIST:
+			break;
+		case REGISTER:
+			break;
+		}
 	}
 
-	public void deregister() { // remove media from library
-
+	public boolean isExistingArticleNumber(Integer articleNumber) { // TODO tmo
+		return false;
 	}
 
-	public void register() { // add a media to library
-
-	}
-
-	public void info() { // get in depth info about a media
+	public void handleBadArticleNumber(CommandInterpreter cmnd) {
 
 	}
 
 	public String getInput() {// any formating?
 		Scanner scn = new Scanner(System.in);
 		String input = scn.nextLine();
-//		scn.close();
+		if (input.length() == 0)
+			return getInput();
 		input = input.toUpperCase();
 		return input;
 	}
@@ -170,5 +141,13 @@ public class LibraryController {
 
 	public void setLib(Library lib) {
 		this.lib = lib;
+	}
+
+	public boolean isRunning() {
+		return isRunning;
+	}
+
+	public void setRunning(boolean isRunning) {
+		this.isRunning = isRunning;
 	}
 }
