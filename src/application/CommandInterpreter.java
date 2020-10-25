@@ -2,6 +2,8 @@ package application;
 
 import java.util.regex.Pattern;
 
+import application.CommandInterpreter.Command;
+
 /**
  * Extracts commands from strings and checks for general errors pertaining to
  * the extracted command. Does no compare command arguments with library
@@ -10,13 +12,13 @@ import java.util.regex.Pattern;
  */
 public class CommandInterpreter {
 	public enum Command { // Commands available to user
-		LIST, CHECKOUT, CHECKIN, REGISTER, DEREGISTER, INFO, QUIT, UNKNOWN_COMMAND
+		LIST, CHECKOUT, CHECKIN, REGISTER, DEREGISTER, INFO, QUIT, HELP, UNKNOWN_COMMAND
 	}
 
 	public enum Error { // General errors that might emerge from using the commands
-		// TODO SYNTAX_ERROR is never used!
-		SYNTAX_ERROR, UNKNOWN_COMMAND, INVALID_ARGUMENT, LIST_ARGUMENT, CHECKOUT_NO_ARGUMENT, CHECKIN_NO_ARGUMENT,
-		REGISTER_ARGUMENT, DEREGISTER_NO_ARGUMENT, INFO_NO_ARGUMENT, QUIT_ARGUMENT, NO_ERROR
+		// TODO should be more obvious which Errors that are syntax errors
+		UNKNOWN_COMMAND, INVALID_ARGUMENT, LIST_ARGUMENT, CHECKOUT_NO_ARGUMENT, CHECKIN_NO_ARGUMENT, REGISTER_ARGUMENT,
+		DEREGISTER_NO_ARGUMENT, INFO_NO_ARGUMENT, QUIT_ARGUMENT, NO_ERROR, HELP_ARGUMENT
 	}
 
 	private final String input; // user input goes here
@@ -32,12 +34,13 @@ public class CommandInterpreter {
 		this.splitInput = splitInput;
 		if (input.contains(" "))
 			this.splitInput = input.split("[ ]");
+		processCommand();
 	}
 
 	public void processCommand() {
 		// TODO need to figure out where to check article numbers
-		if (input.contains(Command.CHECKIN.name())) {
-			checkIn();
+		if (input.contains(Command.HELP.name())) { // dependant on check order, help needs to be first as it can be combined with other commands 
+			help();
 		} else if (input.contains(Command.CHECKOUT.name())) {
 			checkOut();
 		} else if (input.contains(Command.DEREGISTER.name())) {
@@ -50,20 +53,28 @@ public class CommandInterpreter {
 			list();
 		} else if (input.contains(Command.QUIT.name())) {
 			quit();
-		} else { // TODO check for unknown commands
+		} else if (input.contains(Command.CHECKIN.name())) {
+			checkIn();
+		} else {
 			unknownCommand();
 		}
 	}
 
-	private boolean isNumber(String number) {
-		if (number.length() == 0)
-			return false; // without this check empty strings [""] will return true
-		return Pattern.matches("\\d{" + number.length() + "}", number);
+	public void unknownCommand() { // does not contain any properly spelled commands
+		this.setCommand(Command.UNKNOWN_COMMAND);
+		this.setError(Error.UNKNOWN_COMMAND);
 	}
 
-	public void unknownCommand() { // does not contain any properly spelled commands
-		this.setCommand(Command.UNKNOWN_COMMAND); 
-		this.setError(Error.UNKNOWN_COMMAND);
+	public void help() { // works both without and with arguments
+		this.setCommand(Command.HELP);
+		if (input.equals(Command.HELP.name())) { // no errors
+			this.setError(Error.NO_ERROR);
+		} else if (splitInput.length == 2 && isUsableCommand(splitInput[1])) {
+			this.setError(Error.NO_ERROR);
+		}
+		if (splitInput.length > 2 || (splitInput.length == 2 && !isUsableCommand(splitInput[1]))) {
+			this.setError(Error.HELP_ARGUMENT); // TODO allow commands as argument?
+		}
 	}
 
 	public void quit() { // exit application
@@ -153,13 +164,34 @@ public class CommandInterpreter {
 			this.setError(Error.INVALID_ARGUMENT);
 		}
 	}
-	public String getArgument() {
-		if(splitInput.length == 2) {
+
+	private boolean isUsableCommand(String argument) {
+		Command[] commands = Command.values();
+		if (argument.equals(Command.UNKNOWN_COMMAND.name())) { // UNKNOWN_COMMAND is not meant to be used by user
+			return false;
+		}
+		for (Command command : commands) {
+			if (argument.equals(command.name())) { // if we can match argument with any of the Command enumerations we
+													// return true
+				return true;
+			}
+		}
+		return false; // no matches
+	}
+
+	private boolean isNumber(String number) {
+		if (number.length() == 0)
+			return false; // without this check empty strings [""] will return true
+		return Pattern.matches("\\d{" + number.length() + "}", number);
+	}
+
+	public String getArgument() { // argument should always be the second element in splitinput
+		if (splitInput.length == 2) {
 			return splitInput[1];
-		}else {
+		} else {
 			return null;
 		}
-		
+
 	}
 
 	public Command getCommand() {
