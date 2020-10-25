@@ -155,7 +155,7 @@ public class LibraryController {
 			System.out.println(HELP_CHECKOUT);
 			break;
 		case "INFO":
-			System.out.println(HELP_CHECKOUT);
+			System.out.println(HELP_INFO);
 			break;
 		case "DEREGISTER":
 			System.out.println(HELP_DEREGISTER);
