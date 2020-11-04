@@ -5,10 +5,10 @@ public class LibraryMain {
 	public static void main(String[] args) {
 		Library lib = new Library();
 		LibraryController libController = new LibraryController(lib);
-		libController.saveLibrary();
+		libController.init();
 		libController.start();
 		while (libController.isRunning()) {
-			libController.queryUserCommand();
+			libController.queryUserAction();
 		}
 	}
 

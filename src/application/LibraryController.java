@@ -1,191 +1,169 @@
 package application;
 
-import java.io.File;
-import java.util.regex.*;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.EnumSet;
+import java.util.InputMismatchException;
 import java.util.Scanner;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
 
 import application.CommandInterpreter.Command;
 
 public class LibraryController {
 	private Library lib;
 	private boolean isRunning;
-	private String libPath; // directory path to our Library storage, might be better to let the library
-							// hold this info for itself
-	// Dialogue
-	private final String CHECK_IN_ERROR = "Syntax error: If you mean to check in media. Type \"checkin [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to check in. ";
-	private final String CHECK_OUT_ERROR = "Syntax error: If you mean to check out media. Type \"checkout [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to check out. ";
-	private final String DEREGISTER_ERROR = "Syntax error: If you mean to deregister media from library database. Type \"deregister [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to deregister. ";
-	private final String REGISTER_ERROR = "Syntax error: If you mean to register media. Type \"register\" without quotation marks. ";
-	private final String INFO_ERROR = "Syntax error: If you mean to view extended information about a media. Type \"info [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to read more about. ";
-	private final String LIST_ERROR = "Syntax error: Type \"list\" without quotation marks if you mean to view library contents. ";
-	private final String QUIT_ERROR = "Syntax error: Type \"quit\" without quotation marks if you mean to quit. ";
-	private final String HELP_ERROR = "Syntax error: Type help followed by a command to get usage information about the command. ";
-	private final String SYNTAX_ERROR = "Syntax error: Give a command followed by only one argument and keep in mind that article numbers can only contain integers. ";
-	private final String PROMPT = "> ";
-	private final String BAD_ARTICLE_NUMBER = "No media with the given article number can be found in the library. ";
-	private final String DOUBLE_REGISTER = "A media with the given article number already exists in the library. ";
-	private final String DOUBLE_CHECKOUT = "The media corresponding to the given article number is already checked out. ";
-	private final String DOUBLE_CHECKIN = "The media corresponding to the given article number is already checked in. ";
-	private final String UNKNOWN_COMMAND = "Java Console Library can't recognise any command in the given input. ";
-	private final String QUERY_REGISTER_TYPE = "Would you like to register a book or a movie? ";
-	private final String INVALID_INPUT = "Invalid input. ";
-	private final String WELCOME = "Hello and welcome to the Java Console Library! If this is the first time using this application you are recommended to type \"help\", this will give you the available commands. ";
-	private final String HELP = "These are the available commands: "; // Incomplete, needs to be completed in help()
-	private final String HELP_CHECKIN = "The checkin command is used to check in a lended item such as a book or a movie into the library. Checked in items are ready to be lended out again. ";
-	private final String HELP_CHECKOUT = "The checkout command is used to check out an item such as a book or a movie from the library. Checked out items can't be lended again until they are returned and checked in. ";
-	private final String HELP_INFO = "The info command is used to view extended information about a particular item in the library database. ";
-	private final String HELP_REGISTER = "The register command is used to register new items into the library database. ";
-	private final String HELP_DEREGISTER = "The deregister command is used to remove an item from the library database. ";
-	private final String HELP_QUIT = "The quit command is used to exit the Java Console Library. All library contents are stored until the application is started again. ";
-	private final String HELP_LIST = "The list command is used to view a list of all items stored at the library. The list is ordered by article number. ";
-	private final String HELP_HELP = "Oh boy, you really need help don't you? ";																// method!
+	private LibraryStorageManager storageManager;
 
 	public LibraryController(Library lib) {
 		this.setLib(lib);
-		this.libPath = ".\\bin\\application\\Library Contents\\lib.csv";
+		this.storageManager = new LibraryStorageManager("./bin/application/Library", "contents.csv", lib);
+	}
+
+	public void init() { // stuff that needs to be done before running
+//		storageManager.init();
 	}
 
 	public void start() { // start the application and gives welcome message
 		setRunning(true);
-		System.out.println(WELCOME);
+		System.out.println(CommunicationsUtility.MSG_WELCOME);
 	}
 
-	public void queryUserCommand() { // TODO needs to be split up and made more readable!
-		System.out.print(PROMPT);
-		CommandInterpreter cmnd = new CommandInterpreter(getInput());
+	public void queryUserAction() {
+		System.out.print(CommunicationsUtility.QUERY_PROMPT);
+		CommandInterpreter cmnd = new CommandInterpreter(CommunicationsUtility.getStringInput());
 		String argument = cmnd.getArgument();
-		if (cmnd.getError() != CommandInterpreter.Error.NO_ERROR) { // if we have error
+		// first check in any errors
+		if (cmnd.getError() != CommandInterpreter.Error.NO_ERROR) {
 			handleError(cmnd);
-		}else if(cmnd.getCommand() == CommandInterpreter.Command.HELP && argument != null) {
-			describeCommand(cmnd.getCommand(), cmnd.getArgument());
-		}else if (argument != null && isExistingArticleNumber(Integer.decode(argument))) { // if no error and we have
-																							// argument and argument is
-																						// valid article number
-			if (isLended(Integer.decode(argument)) && cmnd.getCommand() == CommandInterpreter.Command.CHECKOUT) {
-				handleDoubleCheckOut();
-			} else if (!isLended(Integer.decode(argument)) && cmnd.getCommand() == CommandInterpreter.Command.CHECKIN) {
-				handleDoubleCheckIn();
-			} else {
-				handleCommand(cmnd.getCommand(), Integer.decode(argument)); // should it be possible to deregister a
-																			// lended media?
-			}
-		} else if (argument != null && !isExistingArticleNumber(Integer.decode(argument))) { // if no error and we have
-																								// argument and argument
-																								// is invalid article
-																								// number
-				handleBadArticleNumber(cmnd);
-			
-		} else {
-			handleCommand(cmnd.getCommand()); // if we have command without errors and no arguments
+		} else if (checkForDatabaseInconsistencies(cmnd.getCommand(), argument)) { // tmp should separate check from
+																					// handling
+		} else if (argument != null) { // commands with arguments
+			handleCommand(cmnd.getCommand(), argument);
+		} else { // commands without arguments
+			handleCommand(cmnd.getCommand());
 		}
 	}
 
-	public void init() { // stuff that needs to be done before running
-		loadLibarary();
+	public boolean checkForDatabaseInconsistencies(CommandInterpreter.Command cmnd, String argument) { // tmp
+//		if ((cmnd == CommandInterpreter.Command.CHECKIN || cmnd == CommandInterpreter.Command.CHECKOUT
+//				|| cmnd == CommandInterpreter.Command.INFO || cmnd == CommandInterpreter.Command.DEREGISTER)
+//				&& !lib.isExistingArticleNumber(argument)) {
+//			handleBadArticleNumber();
+//			return true;
+//		}
+//		if (cmnd == CommandInterpreter.Command.CHECKOUT && isLended(argument)) {
+//			handleDoubleCheckOut();
+//			return true;
+//		}
+//		if (cmnd == CommandInterpreter.Command.CHECKIN && !isLended(argument)) {
+//			handleDoubleCheckIn();
+//			return true;
+//		}
+		return false;
 	}
 
 	public void handleDoubleCheckIn() {
-		System.out.println(DOUBLE_CHECKIN);
+		System.out.println(CommunicationsUtility.MSG_ERROR_DOUBLECHECKIN);
 	}
 
 	public void handleDoubleCheckOut() {
 
-		System.out.println(DOUBLE_CHECKOUT);
+		System.out.println(CommunicationsUtility.MSG_ERROR_DOUBLECHECKOUT);
 	}
 
-	public void handleBadArticleNumber(CommandInterpreter cmnd) {
-		System.out.println(BAD_ARTICLE_NUMBER);
+	public void handleBadArticleNumber() {
+		System.out.println(CommunicationsUtility.MSG_ERROR_ARTICLENUMBER);
 	}
 
 	public void handleError(CommandInterpreter cmnd) {
 		switch (cmnd.getError()) {
 		case UNKNOWN_COMMAND:
-			System.out.println(this.UNKNOWN_COMMAND); // TODO should probably have separate name from the Error constant
+			System.out.println(CommunicationsUtility.MSG_ERROR_UNKNOWNCOMMAND);
 			break;
 		case INVALID_ARGUMENT:
-			System.out.println(SYNTAX_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_SYNTAX);
 			break;
 		case LIST_ARGUMENT:
-			System.out.println(LIST_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_LIST);
 			break;
 		case CHECKOUT_NO_ARGUMENT:
-			System.out.println(CHECK_OUT_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_CHECKOUT);
 			break;
 		case CHECKIN_NO_ARGUMENT:
-			System.out.println(CHECK_IN_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_CHECKIN);
 			break;
 		case REGISTER_ARGUMENT:
-			System.out.println(REGISTER_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_REGISTER);
 			break;
 		case DEREGISTER_NO_ARGUMENT:
-			System.out.println(DEREGISTER_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_DEREGISTER);
 			break;
 		case INFO_NO_ARGUMENT:
-			System.out.print(INFO_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_INFO);
 			break;
 		case QUIT_ARGUMENT:
-			System.out.println(QUIT_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_QUIT);
 			break;
 		case HELP_ARGUMENT:
-			System.out.println(this.HELP_ERROR);
+			System.out.println(CommunicationsUtility.MSG_ERROR_HELP);
 
 		}
 	}
 
-	public boolean isLended(Integer articleNumber) {
-		// this.lib.getMedia(articleNumber)
-		return false;
-	}
-
+	// gives info about each command
 	public void describeCommand(CommandInterpreter.Command command, String argument) {
 		switch (argument) {
 		case "CHECKIN":
-			System.out.println(HELP_CHECKIN);
+			System.out.println(CommunicationsUtility.INFO_CHECKIN);
 			break;
 		case "CHECKOUT":
-			System.out.println(HELP_CHECKOUT);
+			System.out.println(CommunicationsUtility.INFO_CHECKOUT);
 			break;
 		case "INFO":
-			System.out.println(HELP_INFO);
+			System.out.println(CommunicationsUtility.INFO_INFO);
 			break;
 		case "DEREGISTER":
-			System.out.println(HELP_DEREGISTER);
+			System.out.println(CommunicationsUtility.INFO_DEREGISTER);
 			break;
 		case "REGISTER":
-			System.out.println(HELP_REGISTER);
+			System.out.println(CommunicationsUtility.INFO_REGISTER);
 			break;
 		case "QUIT":
-			System.out.println(HELP_QUIT);
+			System.out.println(CommunicationsUtility.INFO_QUIT);
 			break;
 		case "LIST":
-			System.out.println(HELP_LIST);
+			System.out.println(CommunicationsUtility.INFO_LIST);
 			break;
 		case "HELP":
-			System.out.println(HELP_HELP);
+			System.out.println(CommunicationsUtility.INFO_HELP);
 			break;
 		}
 	}
 
-	public void handleCommand(CommandInterpreter.Command command, Integer articleNumber) {
+//register item as borrowed, register Person as borrower to item TODO separate to query methods in utility, check phone number
+	public void checkout(String articleNumber) {
+//		lib.getMediaFromArticleNumber(articleNumber).borrow(new Person(CommunicationsUtility.queryName(), CommunicationsUtility.queryPhoneNumber()));
+//		updateStorage();
+	}
+
+
+	public void handleCommand(CommandInterpreter.Command command, String argument) {
 		switch (command) {
 		case CHECKIN:
+//			lib.getMediaFromArticleNumber(argument).checkIn();
 			break;
 		case CHECKOUT:
+			checkout(argument);
 			break;
 		case DEREGISTER:
+//			lib.getStoredMedia().remove(lib.getMediaFromArticleNumber(argument));
+//			System.out.println(CommunicationsUtility.MSG_DEREGISTER_SUCCESSFUL);
+//			updateStorage();
 			break;
 		case INFO:
+//			System.out.println(lib.getMediaFromArticleNumber(argument).generalInfo());
 			break;
-
+		case HELP:
+			describeCommand(command, argument);
+			break;
 		}
 	}
 
@@ -195,13 +173,13 @@ public class LibraryController {
 			setRunning(false);
 			break;
 		case LIST:
-			// print all stored contents in library
+//			CommunicationsUtility.listLibraryContents(getLib());
 			break;
 		case REGISTER:
 			registerNewMedia();
 			break;
 		case HELP:
-			System.out.println(this.HELP);
+			System.out.println(CommunicationsUtility.INFO_GENERAL_ORIENTATION);
 			listUserCommands();
 			break;
 		}
@@ -209,74 +187,71 @@ public class LibraryController {
 
 	public void listUserCommands() {
 		EnumSet<Command> commands = EnumSet.allOf(Command.class);
-		commands.remove(CommandInterpreter.Command.UNKNOWN_COMMAND); // Command.UNKNOWN_COMMAND is not meant to be used
+		commands.remove(CommandInterpreter.Command.UNKNOWN_COMMAND); // UNKNOWN_COMMAND is not meant to be used
 																		// directly by user
 		commands.forEach(command -> System.out.println(command));
 	}
 
 	public void registerNewMedia() { // TODO might be able to set avoid hardcoding the LendableMedia types
-		System.out.println(QUERY_REGISTER_TYPE);
-		String input = getInput();
+		String input = CommunicationsUtility.queryType();
 		if (input.equals("BOOK")) {
 			registerNewBook();
 		} else if (input.equals("MOVIE")) {
 			registerNewMovie();
-		} else {
-			System.out.println(INVALID_INPUT);
-			registerNewMedia();
 		}
 	}
 
 	public void registerNewBook() {
-		// TODO Book needs to be implemented first
+//		String articleNr = CommunicationsUtility.queryArticleNumber(getLib());
+		String title = CommunicationsUtility.queryTitle();
+		int value = CommunicationsUtility.queryValue();
+		int pages = CommunicationsUtility.queryPages();
+		String author = CommunicationsUtility.queryAuthor();
+//		lib.addLendableMedia(new Book(articleNr, title, value, pages, author));
+//		updateStorage();
+		// maybe add verification of successful storage
+		System.out.println(CommunicationsUtility.MSG_REGISTER_SUCCESS);
 	}
 
-	public void registerNewMovie() {
-		// TODO Movie needs to be implemented first
+	public void registerNewMovie() { // TODO catch NumberFormatException
+//		String articleNr = CommunicationsUtility.queryArticleNumber(getLib());
+		String title = CommunicationsUtility.queryTitle();
+		int value = CommunicationsUtility.queryValue();
+		int length = CommunicationsUtility.queryLength();
+		double rating = CommunicationsUtility.queryRating();
+//		lib.addLendableMedia(new Movie(articleNr, title, value, length, rating));
+//		updateStorage();
+		System.out.println(CommunicationsUtility.MSG_REGISTER_SUCCESS);
 	}
 
-	public boolean isExistingArticleNumber(Integer articleNumber) { // TODO tmo
-		return false;
-	}
-
-	public String getInput() {// any formating?
-		Scanner scn = new Scanner(System.in);
-		String input = scn.nextLine();
-		if (input.length() == 0) // no empty strings allowed, no dialogue needed
-			return getInput();
-		input = input.toUpperCase();
-		return input;
-	}
-
-	public void saveLibrary() { // tmp implementation until all needed classes are implemented, should throw
-								// exception
-		try {
-			FileWriter writer = new FileWriter(libPath); //
-			CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT);
-			printer.printRecord("ArticleNr", "Name", "Value", "Borrower", "Pages/Length", "Publisher/IMDB Rating");
-//			for (LendableMedia media : lib.getStoredMedia()) {
-//				
+//	public void updateStorage() { // TODO
+//		try {
+//			storageManager.saveLibrary();
+//		} catch (IOException e) {
+//			System.out.println("The storage file has been altered during runtime. ");
+//			if (lib.getStoredMedia().size() > 0) {
+//				System.out.println("Restoring from working memory... ");
+//				storageManager.makeStorageFolder();
+//				try {
+//					storageManager.saveLibrary();
+//				} catch (IOException e1) {
+//					e1.printStackTrace();
+//					System.out.print("Unknown error. Shutting down.");
+//					System.exit(1);
+//				}
+//			} else {
+//				init();
 //			}
-			printer.close();
-		} catch (IOException e) {
-		}
-	}
+//			e.printStackTrace();
+//		}
+//	}
 
-	public void loadLibarary() { // tmp implementation until all needed classes are implemented, should throw
-									// exception, should load to collection, do we make new file or mend old one?
-		File csvData = new File(libPath);
-		CSVParser parser;
-		try {
-			parser = CSVParser.parse(csvData, Charset.defaultCharset(), CSVFormat.RFC4180);
-			boolean first = true;
-			for (CSVRecord csvRecord : parser) {
-				System.out.print(csvRecord.get(0) + " " + csvRecord.get(1) + " " + csvRecord.get(2) + " "
-						+ csvRecord.get(3) + " " + csvRecord.get(4) + " ");
-				System.out.println(csvRecord.get(5));
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public boolean isLended(String articleNumber) {
+//		LendableMedia media = lib.getMediaFromArticleNumber(articleNumber); // lib method returns null if not finding
+//		if (media == null || !media.isBorrowed()) {
+			return false;
+//		}
+//		return true;
 	}
 
 	public Library getLib() {

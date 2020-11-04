@@ -7,8 +7,8 @@ public class CompareArticleNumber implements Comparator<LendableMedia>{
 
 	@Override
 	public int compare(LendableMedia media1, LendableMedia media2) {
-//		if(media1.getArticleNumber() > media2.getArticleNumber()) return 1;
-//		if(media1.getArticleNumber() < media2.getArticleNumber()) return -1;
+//		if(Long.valueOf(media1.getArticleNr()) > Long.valueOf(media2.getArticleNr())) return 1;
+//		if(Long.valueOf(media1.getArticleNr()) < Long.valueOf(media2.getArticleNr())) return -1;
 		return 0;
 	}
 

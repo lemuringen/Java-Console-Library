@@ -1,5 +1,5 @@
 package application;
 
-public class Movie extends LendableMedia{
+public class Movie extends LendableMedia {
 
 }

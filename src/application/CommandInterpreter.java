@@ -38,22 +38,23 @@ public class CommandInterpreter {
 	}
 
 	public void processCommand() {
-		// TODO need to figure out where to check article numbers
-		if (input.contains(Command.HELP.name())) { // dependant on check order, help needs to be first as it can be combined with other commands 
+		// dependent on check order, help needs to be first as it can be combined with
+		// other commands, TODO should change input to splitInput[0], maybe use regex (check for general whitespace characters?)
+		if (input.contains(Command.HELP.name() + " ") || input.contains(" " + Command.HELP.name()) || input.contains(" " + Command.HELP.name() + " ") || splitInput[0].equals(Command.HELP.name())) {
 			help();
-		} else if (input.contains(Command.CHECKOUT.name())) {
+		} else if (input.contains(Command.CHECKOUT.name() + " ") || input.contains(" " + Command.CHECKOUT.name()) || input.contains(" " + Command.CHECKOUT.name() + " ") || splitInput[0].equals(Command.CHECKOUT.name())) { 
 			checkOut();
-		} else if (input.contains(Command.DEREGISTER.name())) {
+		} else if (input.contains(Command.DEREGISTER.name() + " ") || input.contains(" " + Command.DEREGISTER.name()) || input.contains(" " + Command.DEREGISTER.name() + " ") || splitInput[0].equals(Command.DEREGISTER.name())) {		
 			deregister();
-		} else if (input.contains(Command.REGISTER.name())) {
+		} else if (input.contains(Command.REGISTER.name() + " ") || input.contains(" " + Command.REGISTER.name()) || input.contains(" " + Command.REGISTER.name() + " ")|| splitInput[0].equals(Command.REGISTER.name())) {
 			register();
-		} else if (input.contains(Command.INFO.name())) {
+		} else if (input.contains(Command.INFO.name() + " ") || input.contains(" " + Command.INFO.name()) || input.contains(" " + Command.INFO.name() + " ") || splitInput[0].equals(Command.INFO.name())) {
 			info();
-		} else if (input.contains(Command.LIST.name())) {
+		} else if (input.contains(Command.LIST.name() + " ") || input.contains(" " + Command.LIST.name()) || input.contains(" " + Command.LIST.name() + " ") || splitInput[0].equals(Command.LIST.name())) {
 			list();
-		} else if (input.contains(Command.QUIT.name())) {
+		} else if (input.contains(Command.QUIT.name() + " ") || input.contains(" " + Command.QUIT.name()) || input.contains(" " + Command.QUIT.name() + " ") || splitInput[0].equals(Command.QUIT.name())) {
 			quit();
-		} else if (input.contains(Command.CHECKIN.name())) {
+		} else if (input.contains(Command.CHECKIN.name() + " ") || input.contains(" " + Command.CHECKIN.name()) || input.contains(" " + Command.CHECKIN.name() + " ") || splitInput[0].equals(Command.CHECKIN.name())) {
 			checkIn();
 		} else {
 			unknownCommand();
@@ -69,11 +70,14 @@ public class CommandInterpreter {
 		this.setCommand(Command.HELP);
 		if (input.equals(Command.HELP.name())) { // no errors
 			this.setError(Error.NO_ERROR);
-		} else if (splitInput.length == 2 && isUsableCommand(splitInput[1])) {
+		} else if (splitInput.length == 2 && splitInput[0].equals(Command.HELP.name()) && isUsableCommand(splitInput[1])) {
 			this.setError(Error.NO_ERROR);
-		}
-		if (splitInput.length > 2 || (splitInput.length == 2 && !isUsableCommand(splitInput[1]))) {
-			this.setError(Error.HELP_ARGUMENT); // TODO allow commands as argument?
+		} 
+		else if (splitInput.length > 2 || (splitInput.length == 2 && !isUsableCommand(splitInput[1]))) {
+			this.setError(Error.HELP_ARGUMENT);
+			 // TODO allow commands as argument?
+		}else {
+			this.setError(Error.HELP_ARGUMENT);
 		}
 	}
 
@@ -81,7 +85,7 @@ public class CommandInterpreter {
 		this.setCommand(Command.QUIT);
 		if (input.equals(Command.QUIT.name())) { // no errors
 			this.setError(Error.NO_ERROR);
-		} else if (splitInput.length > 1) {
+		} else{
 			this.setError(Error.QUIT_ARGUMENT); // should not have arguments
 		}
 	}
@@ -101,6 +105,8 @@ public class CommandInterpreter {
 																									// argument
 
 			this.setError(Error.INVALID_ARGUMENT);
+		} else { // TODO special case needs better error message: ascheckinf 0001
+			this.setError(Error.CHECKIN_NO_ARGUMENT);
 		}
 	}
 
@@ -115,6 +121,8 @@ public class CommandInterpreter {
 																									// digits used in
 																									// argument
 			this.setError(Error.INVALID_ARGUMENT);
+		} else { // TODO special case needs better error message: ascheckinf 0001
+			this.setError(Error.CHECKOUT_NO_ARGUMENT);
 		}
 	}
 
@@ -122,7 +130,7 @@ public class CommandInterpreter {
 		this.setCommand(Command.LIST);
 		if (input.equals(Command.LIST.name())) {
 			this.setError(Error.NO_ERROR);
-		} else if (splitInput.length > 1) {
+		} else {
 			this.setError(Error.LIST_ARGUMENT); // should not have arguments
 		}
 	}
@@ -139,6 +147,8 @@ public class CommandInterpreter {
 																									// digits used in
 																									// argument
 			this.setError(Error.INVALID_ARGUMENT);
+		} else { // TODO special case needs better error message: ascheckinf 0001
+			this.setError(Error.DEREGISTER_NO_ARGUMENT);
 		}
 	}
 
@@ -146,7 +156,7 @@ public class CommandInterpreter {
 		this.setCommand(Command.REGISTER);
 		if (input.equals(Command.REGISTER.name())) {
 			this.setError(Error.NO_ERROR);
-		} else if (splitInput.length > 1) {
+		} else {
 			this.setError(Error.REGISTER_ARGUMENT); // should not have arguments
 		}
 	}
@@ -162,6 +172,8 @@ public class CommandInterpreter {
 																									// digits used in
 																									// argument
 			this.setError(Error.INVALID_ARGUMENT);
+		} else { // TODO special case needs better error message: ascheckinf 0001
+			this.setError(Error.INFO_NO_ARGUMENT);
 		}
 	}
 
@@ -179,7 +191,7 @@ public class CommandInterpreter {
 		return false; // no matches
 	}
 
-	private boolean isNumber(String number) {
+public static boolean isNumber(String number) {
 		if (number.length() == 0)
 			return false; // without this check empty strings [""] will return true
 		return Pattern.matches("\\d{" + number.length() + "}", number);
