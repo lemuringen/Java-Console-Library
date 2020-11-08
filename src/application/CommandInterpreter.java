@@ -1,25 +1,15 @@
 package application;
 
-import java.util.regex.Pattern;
 
-import application.CommandInterpreter.Command;
+import java.util.regex.Pattern;
 
 /**
  * Extracts commands from strings and checks for general errors pertaining to
- * the extracted command. Does no compare command arguments with library
+ * the extracted command. Does not compare command arguments with library
  * database. Might serve best to make this class fully static depending on how
  * it will be used in the end.
  */
 public class CommandInterpreter {
-	public enum Command { // Commands available to user
-		LIST, CHECKOUT, CHECKIN, REGISTER, DEREGISTER, INFO, QUIT, HELP, UNKNOWN_COMMAND
-	}
-
-	public enum Error { // General errors that might emerge from using the commands
-		// TODO should be more obvious which Errors that are syntax errors
-		UNKNOWN_COMMAND, INVALID_ARGUMENT, LIST_ARGUMENT, CHECKOUT_NO_ARGUMENT, CHECKIN_NO_ARGUMENT, REGISTER_ARGUMENT,
-		DEREGISTER_NO_ARGUMENT, INFO_NO_ARGUMENT, QUIT_ARGUMENT, NO_ERROR, HELP_ARGUMENT
-	}
 
 	private final String input; // user input goes here
 	private String[] splitInput; // user input split by space symbol
@@ -56,8 +46,20 @@ public class CommandInterpreter {
 			quit();
 		} else if (input.contains(Command.CHECKIN.name() + " ") || input.contains(" " + Command.CHECKIN.name()) || input.contains(" " + Command.CHECKIN.name() + " ") || splitInput[0].equals(Command.CHECKIN.name())) {
 			checkIn();
-		} else {
+		} else if(input.contains(Command.LOANS.name() + " ") || input.contains(" " + Command.LOANS.name()) || input.contains(" " + Command.LOANS.name() + " ") || splitInput[0].equals(Command.LOANS.name())){
+			loans();
+		}else {
 			unknownCommand();
+		}
+	}
+	public void loans() {
+		this.setCommand(Command.LOANS);
+		if (input.equals(Command.LOANS.name())) { // no errors
+			this.setError(Error.NO_ERROR);
+		} else if(splitInput.length > 1 && onlyLetters(getArgument())){
+			this.setError(Error.NO_ERROR);
+		}
+		else{this.setError(Error.LOANS_ARGUMENT); // should not have arguments
 		}
 	}
 
@@ -126,8 +128,8 @@ public class CommandInterpreter {
 		}
 	}
 
-	public void list() { // view a list of all the contents stored at the library
-		this.setCommand(Command.LIST);
+	public void list() { // view a list of all the contents stored at the library TODO give filters as argument? IE: list borrowed/list stocked
+		this.setCommand(Command.LIST); 
 		if (input.equals(Command.LIST.name())) {
 			this.setError(Error.NO_ERROR);
 		} else {
@@ -194,18 +196,30 @@ public class CommandInterpreter {
 public static boolean isNumber(String number) {
 		if (number.length() == 0)
 			return false; // without this check empty strings [""] will return true
-		return Pattern.matches("\\d{" + number.length() + "}", number);
+		return Pattern.matches("^[\\d]+$", number);
 	}
+public static boolean onlyLetters(String name) { //TODO
+	if (name.length() == 0)
+		return false; // without this check empty strings [""] will return true
+	return Pattern.matches("^[\\p{L} ]+$", name);
+}
 
-	public String getArgument() { // argument should always be the second element in splitinput
-		if (splitInput.length == 2) {
-			return splitInput[1];
+	public String getArgument() { // argument should be everything following the command TODO replacefirst() regex
+		if (splitInput.length > 1) {
+			String argument = "";
+			for(int i = 1; i <splitInput.length; i++) {
+				argument += " " + splitInput[i];
+			}
+			argument = argument.trim();
+			return argument;
 		} else {
 			return null;
 		}
 
 	}
-
+	public String getUnrecognizedCommand() {
+		return this.splitInput[0];
+	}
 	public Command getCommand() {
 		return command;
 	}

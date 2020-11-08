@@ -1,11 +1,8 @@
 package application;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.InputMismatchException;
-import java.util.Scanner;
-
-import application.CommandInterpreter.Command;
 
 public class LibraryController {
 	private Library lib;
@@ -18,7 +15,7 @@ public class LibraryController {
 	}
 
 	public void init() { // stuff that needs to be done before running
-//		storageManager.init();
+		storageManager.init();
 	}
 
 	public void start() { // start the application and gives welcome message
@@ -31,52 +28,44 @@ public class LibraryController {
 		CommandInterpreter cmnd = new CommandInterpreter(CommunicationsUtility.getStringInput());
 		String argument = cmnd.getArgument();
 		// first check in any errors
-		if (cmnd.getError() != CommandInterpreter.Error.NO_ERROR) {
+		if (cmnd.getError() != Error.NO_ERROR) {
 			handleError(cmnd);
-		} else if (checkForDatabaseInconsistencies(cmnd.getCommand(), argument)) { // tmp should separate check from
-																					// handling
+		} // check if the argument is registered articlenr for commands that requires it
+		else if ((cmnd.getCommand() == Command.CHECKIN || cmnd.getCommand() == Command.CHECKOUT
+				|| cmnd.getCommand() == Command.INFO || cmnd.getCommand() == Command.DEREGISTER)
+				&& !lib.isExistingArticleNumber(argument)) {
+			handleBadArticleNumber();
+		} // cant lend an already lended media
+		else if (cmnd.getCommand() == Command.CHECKOUT && !lib.getMedia(argument).isInStock()) {
+			handleOutOfStockCheckOut();
+		} else if (cmnd.getCommand() == Command.CHECKIN && !lib.getMedia(argument).isLended()) {
+			handleNotLended();
 		} else if (argument != null) { // commands with arguments
+
 			handleCommand(cmnd.getCommand(), argument);
 		} else { // commands without arguments
 			handleCommand(cmnd.getCommand());
 		}
 	}
 
-	public boolean checkForDatabaseInconsistencies(CommandInterpreter.Command cmnd, String argument) { // tmp
-//		if ((cmnd == CommandInterpreter.Command.CHECKIN || cmnd == CommandInterpreter.Command.CHECKOUT
-//				|| cmnd == CommandInterpreter.Command.INFO || cmnd == CommandInterpreter.Command.DEREGISTER)
-//				&& !lib.isExistingArticleNumber(argument)) {
-//			handleBadArticleNumber();
-//			return true;
-//		}
-//		if (cmnd == CommandInterpreter.Command.CHECKOUT && isLended(argument)) {
-//			handleDoubleCheckOut();
-//			return true;
-//		}
-//		if (cmnd == CommandInterpreter.Command.CHECKIN && !isLended(argument)) {
-//			handleDoubleCheckIn();
-//			return true;
-//		}
-		return false;
+	private void handleNotLended() {
+		System.out.println(CommunicationsUtility.MSG_ERROR_NOTLENDED);
 	}
 
-	public void handleDoubleCheckIn() {
-		System.out.println(CommunicationsUtility.MSG_ERROR_DOUBLECHECKIN);
+	private void handleOutOfStockCheckOut() {
+
+		System.out.println(CommunicationsUtility.MSG_ERROR_DOUBLECHECKOUT); // TODO
 	}
 
-	public void handleDoubleCheckOut() {
-
-		System.out.println(CommunicationsUtility.MSG_ERROR_DOUBLECHECKOUT);
-	}
-
-	public void handleBadArticleNumber() {
+	private void handleBadArticleNumber() {
 		System.out.println(CommunicationsUtility.MSG_ERROR_ARTICLENUMBER);
 	}
 
-	public void handleError(CommandInterpreter cmnd) {
+	private void handleError(CommandInterpreter cmnd) {
 		switch (cmnd.getError()) {
 		case UNKNOWN_COMMAND:
-			System.out.println(CommunicationsUtility.MSG_ERROR_UNKNOWNCOMMAND);
+			System.out.println(
+					CommunicationsUtility.MSG_ERROR_UNKNOWNCOMMAND.replace("*", cmnd.getUnrecognizedCommand()));
 			break;
 		case INVALID_ARGUMENT:
 			System.out.println(CommunicationsUtility.MSG_ERROR_SYNTAX);
@@ -104,12 +93,15 @@ public class LibraryController {
 			break;
 		case HELP_ARGUMENT:
 			System.out.println(CommunicationsUtility.MSG_ERROR_HELP);
-
+			break;
+		case LOANS_ARGUMENT:
+			System.out.println(CommunicationsUtility.MSG_ERROR_LOANS);
+			break;
 		}
 	}
 
 	// gives info about each command
-	public void describeCommand(CommandInterpreter.Command command, String argument) {
+	private void describeCommand(Command command, String argument) {
 		switch (argument) {
 		case "CHECKIN":
 			System.out.println(CommunicationsUtility.INFO_CHECKIN);
@@ -135,123 +127,286 @@ public class LibraryController {
 		case "HELP":
 			System.out.println(CommunicationsUtility.INFO_HELP);
 			break;
+		case "LOANS":
+			System.out.println(CommunicationsUtility.INFO_LOANS);
+			break;
 		}
 	}
 
 //register item as borrowed, register Person as borrower to item TODO separate to query methods in utility, check phone number
-	public void checkout(String articleNumber) {
-//		lib.getMediaFromArticleNumber(articleNumber).borrow(new Person(CommunicationsUtility.queryName(), CommunicationsUtility.queryPhoneNumber()));
-//		updateStorage();
+	private void checkout(String articleNumber) {
+		String name = CommunicationsUtility.queryName();
+		if(lib.getBorrowers().containsKey(name)) {
+			Person borrower = lib.getBorrowers().get(name);
+			lib.getMedia(articleNumber).borrow(borrower);
+			System.out.println("Another book lended by " + name + ". ");
+		}else {
+		lib.getMedia(articleNumber)
+				.borrow(new Person(name, CommunicationsUtility.queryPhoneNumber()));
+		System.out.println("Book lended by " + name + ". ");
+		}
+		updateStorage();
 	}
 
-
-	public void handleCommand(CommandInterpreter.Command command, String argument) {
+//handles commands with argument, should already be determined that argument is fit for the command
+	private void handleCommand(Command command, String argument) {
 		switch (command) {
 		case CHECKIN:
-//			lib.getMediaFromArticleNumber(argument).checkIn();
+			// lib.getMediaFromArticleNumber(argument).checkIn(); // TODO should be possible
+			// to checkin with name and sn
+			checkIn(argument);
 			break;
 		case CHECKOUT:
 			checkout(argument);
 			break;
 		case DEREGISTER:
-//			lib.getStoredMedia().remove(lib.getMediaFromArticleNumber(argument));
-//			System.out.println(CommunicationsUtility.MSG_DEREGISTER_SUCCESSFUL);
-//			updateStorage();
+			deregister(argument);
 			break;
 		case INFO:
-//			System.out.println(lib.getMediaFromArticleNumber(argument).generalInfo());
+			giveProductInfo(argument);
 			break;
 		case HELP:
 			describeCommand(command, argument);
 			break;
+		case LOANS:
+			showPersonalLoans(argument);
 		}
 	}
 
-	public void handleCommand(CommandInterpreter.Command command) {
+	private void handleCommand(Command command) {
 		switch (command) {
 		case QUIT:
 			setRunning(false);
 			break;
 		case LIST:
-//			CommunicationsUtility.listLibraryContents(getLib());
+			CommunicationsUtility.listLibraryContents(getLib());
 			break;
 		case REGISTER:
-			registerNewMedia();
+			registerMedia();
 			break;
 		case HELP:
 			System.out.println(CommunicationsUtility.INFO_GENERAL_ORIENTATION);
 			listUserCommands();
 			break;
+		case LOANS:
+			showAllLoans();
+			break;
 		}
 	}
 
-	public void listUserCommands() {
+	public void deregister(String articleNumber) { // TODO
+		LendableMedia media = lib.getMedia(articleNumber);
+		boolean validInput = false;
+		do {
+			System.out.println("Would you like to deregister an individual [copy] or [all] copies of *? ".replace("*",
+					media.getTitle()));
+			String answer = CommunicationsUtility.getStringInput();
+			if (answer.equalsIgnoreCase("copy")) {
+				validInput = true;
+				for (MediaCopy copy : media.getCopies().values()) {
+					System.out
+							.println(copy.getSerialNumber() + ". " + copy.getBorrower().getName() + copy.getDueDate());
+				}
+				int sn;
+				do {
+					sn = Integer.valueOf(CommunicationsUtility.getStringInput());
+				} while (!media.getCopies().containsKey(sn));
+				if (!media.getCopies().get(sn).isBorrowed()) {
+					media.getCopies().remove(sn);
+				} else {
+					System.out.println(
+							"The copy need to be checked in before you can deregister the book! Returning to the main menu. ");
+					return;
+				}
+			} else if (answer.equalsIgnoreCase("all")) {
+				if (media.getNumberOfLendedCopies() > 0) {
+					System.out.println(
+							"All copies need to be checked in before you can deregister the book! Returning to the main menu. ");
+					return;
+				} else {
+					lib.getStoredMedia().remove(media); // should dissallow if currently lended
+					validInput = true;
+				}
+			}
+		} while (!validInput);
+		System.out.println(CommunicationsUtility.MSG_DEREGISTER_SUCCESSFUL);
+		updateStorage();
+	}
+
+	public void giveProductInfo(String articleNumber) {
+		LendableMedia media = lib.getMedia(articleNumber);
+		ArrayList<MediaCopy> lendedCopies = media.getLendedCopies();
+		System.out.println(media.generalInfo());
+		System.out.println("Currently in stock: " + media.getNumberOfAvailableCopies());
+		System.out.println("Currently lended: ");
+		System.out.println();
+		if (lendedCopies.size() > 0) {
+			for (MediaCopy copy : lendedCopies) {
+				System.out.println("SN: " + copy.getSerialNumber() + " - Borrowed by: " + copy.getBorrower().getName()
+						+ ", Phonenumber: " + copy.getBorrower().getPhoneNr() + " Due to be returned: "
+						+ copy.getDueDate());
+			}
+		}
+	}
+
+	public void showPersonalLoans(String name) {
+		if (lib.getBorrowers().containsKey(name)) { // TODO check out so its the right format of name
+			Person person = lib.getBorrowers().get(name);
+			for (MediaCopy copy : person.getBorrowedCopy()) { // TODO need name of media or article number
+				System.out.println("Loan due by: " + copy.getDueDate());
+			}
+		}
+	}
+
+	public void showAllLoans() {
+		System.out.println("These are the currently lended items and their borrowers: ");
+		System.out.println();
+		boolean nothingLended = true;
+		ArrayList<MediaCopy> lendedCopies;
+		for (LendableMedia media : lib.getStoredMedia()) {
+			lendedCopies = media.getLendedCopies();
+			if (lendedCopies.size() > 0) {
+				nothingLended = false;
+				System.out.println("Article number: " + media.getArticleNr() + " Title: " + media.getTitle());
+				for (MediaCopy copy : lendedCopies) {
+					System.out.println("Serial number: " + copy.getSerialNumber() + ", Borrowed by: "
+							+ copy.getBorrower().getName() + ", Their phonenumber: " + copy.getBorrower().getPhoneNr() + " Due to be returned: " + copy.getDueDate());
+				}
+				System.out.println();
+			}
+		}
+		if (nothingLended) {
+			System.out.println("-Nothing currently lended out.");
+		}
+	}
+
+	public void checkIn(String argument) { // TODO
+		LendableMedia media = lib.getMedia(argument);
+		if (media.getCopies().size() == 0) {
+			System.out.println("No copies of the item is registered in the library database. ");
+			return;
+		}
+		if (media.isNotLended()) {
+			System.out.println("No copies currently lended out. ");
+			return;
+		}
+		System.out.println(
+				"Which copy would you like to check in? Answer with the serial number noted first of the line on every listed person in the following list: ");
+		boolean validInput;
+
+		for (MediaCopy copy : media.getCopies().values()) {
+			System.out.println(copy.getSerialNumber() + ". " + copy.getBorrower().getName() + copy.getDueDate());
+		}
+		do {
+			validInput = false;
+			int sn = Integer.valueOf(CommunicationsUtility.getStringInput());
+			if (media.getCopies().containsKey(sn)) {
+				lib.checkInCopy(media, sn);
+				validInput = true;
+			}
+		} while (!validInput);
+		updateStorage();
+	}
+
+	private void listUserCommands() {
 		EnumSet<Command> commands = EnumSet.allOf(Command.class);
-		commands.remove(CommandInterpreter.Command.UNKNOWN_COMMAND); // UNKNOWN_COMMAND is not meant to be used
-																		// directly by user
+		commands.remove(Command.UNKNOWN_COMMAND); // UNKNOWN_COMMAND is not meant to be used
+													// directly by user
 		commands.forEach(command -> System.out.println(command));
 	}
 
-	public void registerNewMedia() { // TODO might be able to set avoid hardcoding the LendableMedia types
-		String input = CommunicationsUtility.queryType();
-		if (input.equals("BOOK")) {
-			registerNewBook();
-		} else if (input.equals("MOVIE")) {
-			registerNewMovie();
+	private void registerMedia() { // TODO might be able to set avoid hardcoding the LendableMedia types
+		String articleNumber = CommunicationsUtility.queryArticleNumber(getLib());
+		if (lib.isExistingArticleNumber(articleNumber)) {
+			LendableMedia media = lib.getMedia(articleNumber);
+			String type;
+			if (media instanceof Book) {
+				type = "book";
+			} else if (media instanceof Movie) {
+				type = "movie";
+			} else {
+				type = "_error_";
+			}
+			boolean validInput;
+			System.out.println(
+					"There is already a * registered with that article number. Would you like to register a new copy? [yes] or [no]. "
+							.replace("*", type));
+			validInput = true;
+			do {
+				String input = CommunicationsUtility.getStringInput();
+				if (input.equalsIgnoreCase("yes")) {
+					registerNewCopy(media);
+				} else if (input.equalsIgnoreCase("no")) {
+					System.out.println("Returning to main menu. No item registered. ");
+				} else {
+					System.out.println("Please answer [yes] or [no]. ");
+					validInput = false;
+				}
+			} while (!validInput);
+		} else {
+			String type = CommunicationsUtility.queryType();
+			if (type.equals("BOOK")) {
+				registerBook(type);
+			} else if (type.equals("MOVIE")) {
+				registerMovie(type);
+			}
 		}
 	}
 
-	public void registerNewBook() {
-//		String articleNr = CommunicationsUtility.queryArticleNumber(getLib());
+	private void registerNewCopy(LendableMedia media) {
+		media.addNewCopy();
+		System.out.println("Added new copy of " + media.getTitle());
+	}
+
+	private void registerBook(String articleNumber) {
+		Book book = Book.getBook(articleNumber, lib);
 		String title = CommunicationsUtility.queryTitle();
 		int value = CommunicationsUtility.queryValue();
 		int pages = CommunicationsUtility.queryPages();
 		String author = CommunicationsUtility.queryAuthor();
-//		lib.addLendableMedia(new Book(articleNr, title, value, pages, author));
-//		updateStorage();
+		book.setUpBook(title, value, pages, author);
+		book.addNewCopy();
+		lib.addLendableMedia(book);
+		// TODO should have unique message that new book is registered
+		updateStorage();
 		// maybe add verification of successful storage
 		System.out.println(CommunicationsUtility.MSG_REGISTER_SUCCESS);
 	}
 
-	public void registerNewMovie() { // TODO catch NumberFormatException
-//		String articleNr = CommunicationsUtility.queryArticleNumber(getLib());
+	private void registerMovie(String articleNumber) { // TODO catch NumberFormatException
+		Movie movie = Movie.getMovie(articleNumber, lib);
 		String title = CommunicationsUtility.queryTitle();
 		int value = CommunicationsUtility.queryValue();
 		int length = CommunicationsUtility.queryLength();
 		double rating = CommunicationsUtility.queryRating();
-//		lib.addLendableMedia(new Movie(articleNr, title, value, length, rating));
-//		updateStorage();
+		movie.setUpMovie(title, value, length, rating);
+		movie.addNewCopy();
+		lib.addLendableMedia(movie);
+		updateStorage();
 		System.out.println(CommunicationsUtility.MSG_REGISTER_SUCCESS);
+
 	}
 
-//	public void updateStorage() { // TODO
-//		try {
-//			storageManager.saveLibrary();
-//		} catch (IOException e) {
-//			System.out.println("The storage file has been altered during runtime. ");
-//			if (lib.getStoredMedia().size() > 0) {
-//				System.out.println("Restoring from working memory... ");
-//				storageManager.makeStorageFolder();
-//				try {
-//					storageManager.saveLibrary();
-//				} catch (IOException e1) {
-//					e1.printStackTrace();
-//					System.out.print("Unknown error. Shutting down.");
-//					System.exit(1);
-//				}
-//			} else {
-//				init();
-//			}
-//			e.printStackTrace();
-//		}
-//	}
-
-	public boolean isLended(String articleNumber) {
-//		LendableMedia media = lib.getMediaFromArticleNumber(articleNumber); // lib method returns null if not finding
-//		if (media == null || !media.isBorrowed()) {
-			return false;
-//		}
-//		return true;
+	public void updateStorage() { // TODO
+		try {
+			storageManager.storeLibrary();
+		} catch (IOException e) {
+			System.out.println("The storage file has been altered during runtime. ");
+			if (lib.getStoredMedia().size() > 0) {
+				System.out.println("Restoring from working memory... ");
+				storageManager.init(); // TODO
+				try {
+					storageManager.storeLibrary();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					System.out.print("Unknown error. Shutting down.");
+					System.exit(1);
+				}
+			} else {
+				init();
+			}
+			e.printStackTrace();
+		}
 	}
 
 	public Library getLib() {

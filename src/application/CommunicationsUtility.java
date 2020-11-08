@@ -14,26 +14,28 @@ import java.util.Scanner;
 public final class CommunicationsUtility {
 
 // Dialogue
-	public final static String MSG_ERROR_CHECKIN = "Syntax error: If you mean to check in media. Type \"checkin [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to check in. ";
-	public final static String MSG_ERROR_CHECKOUT = "Syntax error: If you mean to check out media. Type \"checkout [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to check out. ";
-	public final static String MSG_ERROR_DEREGISTER = "Syntax error: If you mean to deregister media from library database. Type \"deregister [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to deregister. ";
-	public final static String MSG_ERROR_REGISTER = "Syntax error: If you mean to register media. Type \"register\" without quotation marks. ";
-	public final static String MSG_ERROR_INFO = "Syntax error: If you mean to view extended information about a media. Type \"info [Article Number]\" without quotation marks and with \"[Article Number]\" replaced with the article number corresponding to the media you want to read more about. ";
-	public final static String MSG_ERROR_LIST = "Syntax error: Type \"list\" without quotation marks if you mean to view library contents. ";
-	public final static String MSG_ERROR_QUIT = "Syntax error: Type \"quit\" without quotation marks if you mean to quit. ";
-	public final static String MSG_ERROR_HELP = "Syntax error: Type help followed by a command to get usage information about the command. Or simply write help to see available commands. ";
+	public final static String MSG_ERROR_CHECKIN = "Syntax error: If you mean to check in an item. Type [checkin] followed by the article number corresponding to the item you want to check in. ";
+	public final static String MSG_ERROR_CHECKOUT = "Syntax error: If you mean to check out an item. Type [checkout] followed by the article number corresponding to the item you want to check out. ";
+	public final static String MSG_ERROR_DEREGISTER = "Syntax error: If you mean to [deregister] an item from the library database. Type [deregister] followed by the article number corresponding to the item you want to [deregister]. ";
+	public final static String MSG_ERROR_REGISTER = "Syntax error: If you mean to [register] an item, type [register] without any arguments. ";
+	public final static String MSG_ERROR_INFO = "Syntax error: If you mean to view extended information about a item. Type [info] followed by the article number corresponding to the item you want to read more about. ";
+	public final static String MSG_ERROR_LIST = "Syntax error: Type [list] if you mean to view library contents. ";
+	public final static String MSG_ERROR_QUIT = "Syntax error: Type [quit] without any arguments if you mean to [quit] the application. ";
+	public final static String MSG_ERROR_HELP = "Syntax error: Type [help] followed by a command to get usage information about the command. Or simply type [help] to see available commands. ";
+	public final static String MSG_ERROR_LOANS = "Syntax error: Type [loans] without quotation marks if you mean to view all currently lended items and corresponding borrowers. ";
 	public final static String MSG_ERROR_SYNTAX = "Syntax error: Give a command followed by only one argument and keep in mind that article numbers can only contain integers. ";
-	public final static String MSG_ERROR_ARTICLENUMBER = "No media with the given article number can be found in the library. ";
-	public final static String MSG_ERROR_DOUBLEREGISTER = "A media with the given article number already exists in the library. ";
-	public final static String MSG_ERROR_DOUBLECHECKOUT = "The media corresponding to the given article number is already checked out. ";
-	public final static String MSG_ERROR_DOUBLECHECKIN = "The media corresponding to the given article number is already checked in. ";
-	public final static String MSG_ERROR_UNKNOWNCOMMAND = "Java Console Library can't recognise any command in the given input. ";
+	public final static String MSG_ERROR_ARTICLENUMBER = "No item with the given article number can be found in the library. ";
+	public final static String MSG_ERROR_DOUBLEREGISTER = "An item with the given article number already exists in the library. ";
+	public final static String MSG_ERROR_DOUBLECHECKOUT = "The item corresponding to the given article number is already checked out. ";
+	final static public String MSG_ERROR_NOTLENDED = "The item you are to check out is currently not lended out to anyone. ";
+	public final static String MSG_ERROR_DOUBLECHECKIN = "The item corresponding to the given article number is already checked in. ";
+	public final static String MSG_ERROR_UNKNOWNCOMMAND = "Java Console Library doesn't recognise \"*\" as a command. Type [help] to get [list] of available commands. "; //asterisk is meant to be replaced
 	public final static String MSG_ERROR_INVALIDINPUT = "Invalid input. ";
 
 	public final static String QUERY_PROMPT = "> ";
-	public final static String QUERY_REGISTER_TYPE = "Would you like to register a book or a movie? ";
-	public final static String QUERY_NAME = "What is the name of the borrower? ";
-	public final static String QUERY_PHONENUMBER = "What is the phonenumber of the borrower: ";
+	public final static String QUERY_REGISTER_TYPE = "Would you like to register a [book] or a [movie]? ";
+	public final static String QUERY_NAME = "Name of the person borrowing: ";
+	public final static String QUERY_PHONENUMBER = "Phonenumber of the person borrowing: ";
 	public static final String QUERY_ARTICLENUMBER = "Article number: ";
 	public static final String QUERY_TITLE = "Title: ";
 	public static final String QUERY_VALUE = "Value: ";
@@ -42,21 +44,24 @@ public final class CommunicationsUtility {
 	public static final String QUERY_LENGTH = "How many minutes: ";
 	public static final String QUERY_RATING = "What is the IMDB rating: ";
 
-	public final static String MSG_WELCOME = "Hello and welcome to the Java Console Library! If this is the first time using this application you are recommended to type \"help\", this will give you the available commands. ";
-	public final static String MSG_REGISTER_SUCCESS = "Media successfully added to library database. Awaiting further commands: "; // be
+	public final static String MSG_WELCOME = "Hello and welcome to the Java Console Library! If this is the first time using this application you are recommended to type [help], this will give you the available commands. ";
+	public final static String MSG_REGISTER_SUCCESS = "Media successfully added to library database. Awaiting further commands: ";
 	public static final String MSG_DEREGISTER_SUCCESSFUL = "Item successfully deregistered. ";
 
-	public final static String INFO_GENERAL_ORIENTATION = "These are the available commands: "; // Incomplete, needs to
-																								// completed in help()
-																								// method!
-	public final static String INFO_CHECKIN = "The checkin command is used to check in a lended item such as a book or a movie into the library. Checked in items are ready to be lended out again. ";
-	public final static String INFO_CHECKOUT = "The checkout command is used to check out an item such as a book or a movie from the library. Checked out items can't be lended again until they are returned and checked in. ";
-	public final static String INFO_INFO = "The info command is used to view extended information about a particular item in the library database. ";
-	public final static String INFO_REGISTER = "The register command is used to register new items into the library database. ";
-	public final static String INFO_DEREGISTER = "The deregister command is used to remove an item from the library database. ";
-	public final static String INFO_QUIT = "The quit command is used to exit the Java Console Library. All library contents are stored until the application is started again. ";
-	public final static String INFO_LIST = "The list command is used to view a list of all items stored at the library. The list is ordered by article number. ";
-	public final static String INFO_HELP = "Oh boy, you really need help don't you? ";
+	public final static String INFO_GENERAL_ORIENTATION = "If you want information about how to use a particular command. Type [help] followed by the command. These are the available commands: "; // Incomplete,
+																																																		// needs
+																																																		// to
+	// completed in help()
+	// method!
+	public final static String INFO_LOANS = "The [loans] commands is used to view all currently lended items and information about the corresponding borrowers. ";
+	public final static String INFO_CHECKIN = "The [checkin] command is used to check in a lended item such as a book or a movie into the library. Checked in items are ready to be lended out again. ";
+	public final static String INFO_CHECKOUT = "The [checkout] command is used to check out an item such as a book or a movie from the library. Checked out items can't be lended again until they are returned and checked in. ";
+	public final static String INFO_INFO = "The [info] command is used to view extended information about a particular item in the library database. ";
+	public final static String INFO_REGISTER = "The [register] command is used to [register] new items into the library database. ";
+	public final static String INFO_DEREGISTER = "The [deregister] command is used to remove an item from the library database. ";
+	public final static String INFO_QUIT = "The [quit] command is used to exit the Java Console Library. All library contents are stored until the application is started again. ";
+	public final static String INFO_LIST = "The [list] command is used to view a [list] of all items stored at the library. The [list] is ordered by article number. ";
+	public final static String INFO_HELP = "Oh boy, you really need [help] don't you? ";
 	private final static Scanner scanner = new Scanner(System.in);
 
 	private CommunicationsUtility() {
@@ -74,40 +79,70 @@ public final class CommunicationsUtility {
 		}
 	}
 
-//public static void listLibraryContents(Library lib) { // TODO
-////	lib.sortStoredMedia();// TODO use proper capitalisation!
-//	System.out.println();
-//	System.out.printf("%-20s", "Type:");
-//	System.out.printf("%-20s", "Article number:");
-//	System.out.printf("%-20s", "Title:");
-//	System.out.printf("%-20s", "Author/IMDBRating");
-////	if (lib.getStoredMedia().size() == 0) {
-//		System.out.println();
-//		System.out.println("-Library is empty. ");
-//		return;
-////	}
-////	for (LendableMedia media : lib.getStoredMedia()) {
-////		if (media instanceof Book) {
-//			System.out.println();
-//			System.out.printf("%-20s", "Book");
-////			System.out.printf("%-20s", media.getArticleNr());
-////			System.out.printf("%-20s", media.getTitle());
-////			System.out.printf("%-20s", ((Book) media).getAuthor());
-////		} else if (media instanceof Movie) {
-//			System.out.println();
-//			System.out.printf("%-20s", "Book");
-////			System.out.printf("%-20s", media.getArticleNr());
-////			System.out.printf("%-20s", media.getTitle());
-////			System.out.printf("%-20s", ((Movie) media).getIMDBRating());
-//		}
-//		
-////		if (media.isBorrowed()) {
-//			System.out.println();
-////			System.out.print("-Borrowed by: " + media.getBorrower().getName() + ", Phonenumber: " + media.getBorrower().getPhoneNr() + ", Due to be returned: " + media.getDueDate());
-////		}
-//	}
-//	System.out.println();
-//}
+	public static void listLibraryContents(Library lib) { // TODO
+		lib.sortMedia();// TODO use proper capitalisation!
+
+		int maxArticleNumber = 14; // initial value == length of "Article Number"
+		int maxTitle = 5; // initial value == length of "Title"
+		for (LendableMedia media : lib.getStoredMedia()) {
+			if (media.getArticleNr().length() > maxArticleNumber)
+				maxArticleNumber = media.getArticleNr().length();
+			if (media.getTitle().length() > maxTitle)
+				maxTitle = media.getTitle().length();
+		}
+		listHeaders(maxArticleNumber, maxTitle);
+		if (lib.getStoredMedia().size() == 0) {
+			listEmptyList();
+		} else {
+			for (LendableMedia media : lib.getStoredMedia()) {
+				if (media instanceof Book) {
+					listBook(maxArticleNumber, maxTitle, (Book) media);
+				} else if (media instanceof Movie) {
+					listMovie(maxArticleNumber, maxTitle, (Movie) media);
+				}
+				listStock(media);}
+		}
+		System.out.println();
+	}
+
+	private static void listHeaders(int maxArticleNumber, int maxTitle) {
+		System.out.println();
+		System.out.printf("%-7s", "Type:");
+		System.out.printf("%-" + (maxArticleNumber + 2) + "s", "Article number:"); // TODO?
+		System.out.printf("%-" + (maxTitle + 2) + "s", "Title:");
+		System.out.printf("%-20s", "Author/IMDBRating:");
+	}
+
+	private static void listEmptyList() {
+		System.out.println();
+		System.out.println("-Library is empty. "); // TODO??
+	}
+
+	private static void listBook(int maxArticleNumber, int maxTitle, Book media) {
+		System.out.println();
+		System.out.printf("%-7s", "Book");
+		System.out.printf("%-" + (maxArticleNumber + 2) + "s", media.getArticleNr());
+		System.out.printf("%-" + (maxTitle + 2) + "s", media.getTitle());
+		System.out.printf("%-20s", media.getAuthor());
+	}
+
+	private static void listMovie(int maxArticleNumber, int maxTitle, Movie media) {
+		System.out.println();
+		System.out.printf("%-7s", "Movie");
+		System.out.printf("%-" + (maxArticleNumber + 2) + "s", media.getArticleNr());
+		System.out.printf("%-" + (maxTitle + 2) + "s", media.getTitle());
+		System.out.printf("%-20s", media.getIMDBRating());
+	}
+
+	private static void listBorrower(MediaCopy copy) {
+		System.out.println();
+		System.out.print("	(Borrowed by: " + copy.getBorrower().getName() + ", Phonenumber: "
+				+ copy.getBorrower().getPhoneNr() + ", Due to be returned: " + copy.getDueDate() + ")");
+	}
+	private static void listStock(LendableMedia media) {
+		System.out.println();
+		System.out.println("	-Total stock: (" + media.getNumberOfCopies() + ") Available: (" + media.getNumberOfAvailableCopies() + ") Lent out: (" + media.getNumberOfLendedCopies() + ") Expired loans: (" + media.getNumberOfExpiredLoans() + ") ");
+	}
 
 	public static String queryPhoneNumber() {
 		System.out.println(QUERY_PHONENUMBER);
@@ -126,22 +161,23 @@ public final class CommunicationsUtility {
 		String input = getStringInput();
 		return input;
 	}
-//public static String queryArticleNumber(Library lib) {
-//	System.out.println(QUERY_ARTICLENUMBER);
-//	System.out.print(QUERY_PROMPT);
-//	String input = getStringInput();
-//	if (lib.isExistingArticleNumber(input)) {
-//		System.out.println(MSG_ERROR_DOUBLEREGISTER);
-//		return queryArticleNumber(lib);
-//	}
-//	if (!CommandInterpreter.isNumber(input)) {
-//		System.out.println(MSG_ERROR_INVALIDINPUT);
-//		return queryArticleNumber(lib);
-//	}
-//	return input;
-//}
 
-	public static String queryTitle() {
+	public static String queryArticleNumber(Library lib) {
+		System.out.println(QUERY_ARTICLENUMBER);
+		System.out.print(QUERY_PROMPT);
+		String input = getStringInput();
+//		if (lib.isExistingArticleNumber(input)) {
+//			System.out.println(MSG_ERROR_DOUBLEREGISTER);
+//			return queryArticleNumber(lib);
+//		} TODO
+		if (!CommandInterpreter.isNumber(input)) {
+			System.out.println(MSG_ERROR_INVALIDINPUT);
+			return queryArticleNumber(lib);
+		}
+		return input;
+	}
+
+	public static String queryTitle() { //TODO should be first so that we can check if its already added
 		System.out.println(QUERY_TITLE);
 		System.out.print(QUERY_PROMPT);
 		return getStringInput();
