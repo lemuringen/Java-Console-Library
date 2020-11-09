@@ -2,6 +2,8 @@ package application;
 
 import java.util.Comparator;
 
+import application.media.LendableMedia;
+
 public class CompareArticleNumber implements Comparator<LendableMedia>{
 
 	@Override

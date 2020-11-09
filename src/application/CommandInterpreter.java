@@ -192,30 +192,39 @@ public class CommandInterpreter {
 		}
 		return false; // no matches
 	}
-
+/**
+ * Determine whether a string consists of digits and nothing more.
+ * @param number
+ * @return True if only numbers, false otherwise.
+ */
 public static boolean isNumber(String number) {
-		if (number.length() == 0)
+		if (number.length() == 0 || number == null)
 			return false; // without this check empty strings [""] will return true
 		return Pattern.matches("^[\\d]+$", number);
 	}
-public static boolean onlyLetters(String name) { //TODO
-	if (name.length() == 0)
-		return false; // without this check empty strings [""] will return true
-	return Pattern.matches("^[\\p{L} ]+$", name);
+/**
+ * Determine whether a string consists of letters ("\p{L}" categorised in unicode to letter category) and whitespace characters and nothing else.
+ * @param name
+ * @return True if only letters and whitespace characters, false otherwise.
+ */
+public static boolean onlyLetters(String letters) {
+	if (letters.length() == 0 || letters == null)
+		return false; 
+	return Pattern.matches("^[\\p{L} ]+$", letters);
 }
-
-	public String getArgument() { // argument should be everything following the command TODO replacefirst() regex
+/**
+ * Crops the first word (expected to be a command) from instance variable input 
+ * (expected to be user direction to the program), as such only the argument
+ * should be left. It is not checked if argument is faulty. Argument can have
+ * whitespaces as they may be needed for names.
+ * @return Returns a string assumed (but not checked) to be an argument in user input.
+ */
+	public String getArgument() { 
 		if (splitInput.length > 1) {
-			String argument = "";
-			for(int i = 1; i <splitInput.length; i++) {
-				argument += " " + splitInput[i];
-			}
-			argument = argument.trim();
-			return argument;
+			return  this.input.substring(splitInput[0].length()+1);
 		} else {
 			return null;
 		}
-
 	}
 	public String getUnrecognizedCommand() {
 		return this.splitInput[0];

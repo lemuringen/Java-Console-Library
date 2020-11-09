@@ -2,6 +2,8 @@ package application;
 
 import java.util.ArrayList;
 
+import application.media.MediaCopy;
+
 /**
  *Data container for borrowers of items stored in Library 
  */

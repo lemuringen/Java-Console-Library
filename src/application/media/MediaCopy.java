@@ -1,6 +1,8 @@
-package application;
+package application.media;
 
 import java.sql.Date;
+
+import application.Person;
 
 public class MediaCopy {
 	private Person borrower;
@@ -8,11 +10,16 @@ public class MediaCopy {
 	private boolean isDue;
 	private int serialNumber;
 
-	public MediaCopy(int serialNumber) {
+	protected MediaCopy(int serialNumber) {
 		this(serialNumber, null, null);
 	}
-
-	public MediaCopy(int serialNumber, Person borrower, Date dueDate) {
+	/**should only be 
+	 * 
+	 * @param serialNumber
+	 * @param borrower
+	 * @param dueDate
+	 */
+	protected MediaCopy(int serialNumber, Person borrower, Date dueDate) {
 		this.serialNumber = serialNumber;
 		this.borrower = borrower;
 		this.dueDate = dueDate;
@@ -29,12 +36,7 @@ public class MediaCopy {
 		}
 	}
 
-	public void checkIn() {
-		getBorrower().removeCopy(this);
-		this.setBorrower(null);
-		this.setDueDate(null);
-		this.setDue(false);
-	}
+
 
 	public boolean isBorrowed() {
 		if (getBorrower() == null) {
@@ -44,7 +46,7 @@ public class MediaCopy {
 		}
 	}
 
-	public void setBorrower(Person borrower) {
+	protected void setBorrower(Person borrower) {
 		this.borrower = borrower;
 	}
 
@@ -56,7 +58,7 @@ public class MediaCopy {
 	public Date getDueDate() {
 		return dueDate;
 	}
-
+//TODO extend loan
 	public void setDueDate(Date dueDate) {
 		this.dueDate = dueDate;
 	}
@@ -73,7 +75,7 @@ public class MediaCopy {
 		return serialNumber;
 	}
 
-	public void setSerialNumber(int serialNumber) {
+private void setSerialNumber(int serialNumber) {
 		this.serialNumber = serialNumber;
 	}
 }

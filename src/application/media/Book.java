@@ -1,6 +1,9 @@
-package application;
+package application.media;
 
 import java.util.HashMap;
+import java.util.Iterator;
+
+import application.Library;
 
 public class Book extends LendableMedia {
 	private int pages;
@@ -11,9 +14,12 @@ public class Book extends LendableMedia {
 		this.setArticleNr(articleNumber);
 	}
 
-	// throw exception if book not found? throw exception if movie with same articleNumber?
+	// throw exception if book not found? throw exception if movie with same articleNumber? TODO
 	public static Book getBook(String articleNumber, Library lib) { 
-		for (LendableMedia media : lib.getStoredMedia()) {
+		Iterator<LendableMedia> storedMedia = lib.getStoredMediaIterator();
+		LendableMedia media;
+		while(storedMedia.hasNext()) {
+			media = storedMedia.next();
 			if (media.getArticleNr().equals(articleNumber)) {
 				if (media instanceof Book) {
 					return (Book) media;

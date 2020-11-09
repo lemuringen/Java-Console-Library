@@ -3,6 +3,12 @@ package application;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.Iterator;
+
+import application.media.Book;
+import application.media.LendableMedia;
+import application.media.MediaCopy;
+import application.media.Movie;
 
 public class LibraryController {
 	private Library lib;
@@ -136,14 +142,13 @@ public class LibraryController {
 //register item as borrowed, register Person as borrower to item TODO separate to query methods in utility, check phone number
 	private void checkout(String articleNumber) {
 		String name = CommunicationsUtility.queryName();
-		if(lib.getBorrowers().containsKey(name)) {
-			Person borrower = lib.getBorrowers().get(name);
-			lib.getMedia(articleNumber).borrow(borrower);
+		if (lib.isPersonBorrowing(name)) {
+			Person borrower = lib.getBorrower(name);
+			lib.getMedia(articleNumber).setCopyToLent(borrower);
 			System.out.println("Another book lended by " + name + ". ");
-		}else {
-		lib.getMedia(articleNumber)
-				.borrow(new Person(name, CommunicationsUtility.queryPhoneNumber()));
-		System.out.println("Book lended by " + name + ". ");
+		} else {
+			lib.getMedia(articleNumber).setCopyToLent(new Person(name, CommunicationsUtility.queryPhoneNumber()));
+			System.out.println("Book lended by " + name + ". ");
 		}
 		updateStorage();
 	}
@@ -224,7 +229,7 @@ public class LibraryController {
 							"All copies need to be checked in before you can deregister the book! Returning to the main menu. ");
 					return;
 				} else {
-					lib.getStoredMedia().remove(media); // should dissallow if currently lended
+					lib.removeMedia(articleNumber); // TODO should dissallow if currently lended
 					validInput = true;
 				}
 			}
@@ -250,8 +255,8 @@ public class LibraryController {
 	}
 
 	public void showPersonalLoans(String name) {
-		if (lib.getBorrowers().containsKey(name)) { // TODO check out so its the right format of name
-			Person person = lib.getBorrowers().get(name);
+		if (lib.isPersonBorrowing(name)) { // TODO check out so its the right format of name
+			Person person = lib.getBorrower(name);
 			for (MediaCopy copy : person.getBorrowedCopy()) { // TODO need name of media or article number
 				System.out.println("Loan due by: " + copy.getDueDate());
 			}
@@ -263,14 +268,18 @@ public class LibraryController {
 		System.out.println();
 		boolean nothingLended = true;
 		ArrayList<MediaCopy> lendedCopies;
-		for (LendableMedia media : lib.getStoredMedia()) {
+		Iterator<LendableMedia> storedMedia = lib.getStoredMediaIterator();
+		LendableMedia media;
+		while (storedMedia.hasNext()) {
+			media = storedMedia.next();
 			lendedCopies = media.getLendedCopies();
 			if (lendedCopies.size() > 0) {
 				nothingLended = false;
 				System.out.println("Article number: " + media.getArticleNr() + " Title: " + media.getTitle());
 				for (MediaCopy copy : lendedCopies) {
 					System.out.println("Serial number: " + copy.getSerialNumber() + ", Borrowed by: "
-							+ copy.getBorrower().getName() + ", Their phonenumber: " + copy.getBorrower().getPhoneNr() + " Due to be returned: " + copy.getDueDate());
+							+ CommunicationsUtility.upperCaseInitials(copy.getBorrower().getName()) + ", Their phonenumber: " + copy.getBorrower().getPhoneNr()
+							+ " Due to be returned: " + copy.getDueDate());
 				}
 				System.out.println();
 			}
@@ -315,46 +324,60 @@ public class LibraryController {
 		commands.forEach(command -> System.out.println(command));
 	}
 
+	public String queryYesOrNo() {
+		String input = CommunicationsUtility.getStringInput();
+		System.out.println("[yes] or [no]");
+		System.out.println(CommunicationsUtility.QUERY_PROMPT);
+		if (input.equalsIgnoreCase("yes")) {
+			return "yes";
+		} else if (input.equalsIgnoreCase("no")) {
+			return "yes";
+		} else {
+			System.out.println("Please answer [yes] or [no]. ");
+			return queryYesOrNo();
+		}
+	}
+
 	private void registerMedia() { // TODO might be able to set avoid hardcoding the LendableMedia types
 		String articleNumber = CommunicationsUtility.queryArticleNumber(getLib());
 		if (lib.isExistingArticleNumber(articleNumber)) {
-			LendableMedia media = lib.getMedia(articleNumber);
-			String type;
-			if (media instanceof Book) {
-				type = "book";
-			} else if (media instanceof Movie) {
-				type = "movie";
-			} else {
-				type = "_error_";
-			}
-			boolean validInput;
-			System.out.println(
-					"There is already a * registered with that article number. Would you like to register a new copy? [yes] or [no]. "
-							.replace("*", type));
-			validInput = true;
-			do {
-				String input = CommunicationsUtility.getStringInput();
-				if (input.equalsIgnoreCase("yes")) {
-					registerNewCopy(media);
-				} else if (input.equalsIgnoreCase("no")) {
-					System.out.println("Returning to main menu. No item registered. ");
-				} else {
-					System.out.println("Please answer [yes] or [no]. ");
-					validInput = false;
-				}
-			} while (!validInput);
+			registerOldMedia(articleNumber);
 		} else {
-			String type = CommunicationsUtility.queryType();
-			if (type.equals("BOOK")) {
-				registerBook(type);
-			} else if (type.equals("MOVIE")) {
-				registerMovie(type);
-			}
+			registerNewMedia(articleNumber);
+		}
+	}
+
+	private void registerOldMedia(String articleNumber) {
+		LendableMedia media = lib.getMedia(articleNumber);
+		String type;
+		if (media instanceof Book) {
+			type = "book";
+		} else if (media instanceof Movie) {
+			type = "movie";
+		} else {
+			type = "_error_";
+		}
+		System.out.println(CommunicationsUtility.QUERY_REGISTER_NEWCOPY.replace("*", type));
+		String answer = queryYesOrNo();
+		if (answer.equalsIgnoreCase("yes")) {
+			registerNewCopy(media);
+		} else if (answer.equalsIgnoreCase("no")) {
+			System.out.println(CommunicationsUtility.MSG_REGISTER_CANCELLED);
+		}
+	}
+
+	private void registerNewMedia(String articleNumber) {
+		String type = CommunicationsUtility.queryType();
+		if (type.equals("BOOK")) {
+			registerBook(articleNumber);
+		} else if (type.equals("MOVIE")) {
+			registerMovie(articleNumber);
 		}
 	}
 
 	private void registerNewCopy(LendableMedia media) {
-		media.addNewCopy();
+		// get a new copy and add it
+		media.addCopy(media.getCopy());
 		System.out.println("Added new copy of " + media.getTitle());
 	}
 
@@ -365,7 +388,8 @@ public class LibraryController {
 		int pages = CommunicationsUtility.queryPages();
 		String author = CommunicationsUtility.queryAuthor();
 		book.setUpBook(title, value, pages, author);
-		book.addNewCopy();
+		// automatically adds new copy... maybe not best practice
+		book.addCopy(book.getCopy());
 		lib.addLendableMedia(book);
 		// TODO should have unique message that new book is registered
 		updateStorage();
@@ -380,7 +404,8 @@ public class LibraryController {
 		int length = CommunicationsUtility.queryLength();
 		double rating = CommunicationsUtility.queryRating();
 		movie.setUpMovie(title, value, length, rating);
-		movie.addNewCopy();
+		// automatically adds new copy... maybe not best practice
+		movie.addCopy(movie.getCopy());
 		lib.addLendableMedia(movie);
 		updateStorage();
 		System.out.println(CommunicationsUtility.MSG_REGISTER_SUCCESS);
@@ -392,7 +417,7 @@ public class LibraryController {
 			storageManager.storeLibrary();
 		} catch (IOException e) {
 			System.out.println("The storage file has been altered during runtime. ");
-			if (lib.getStoredMedia().size() > 0) {
+			if (!lib.isLibraryEmpty()) {
 				System.out.println("Restoring from working memory... ");
 				storageManager.init(); // TODO
 				try {

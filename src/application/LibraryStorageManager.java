@@ -7,12 +7,18 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+
+import application.media.Book;
+import application.media.LendableMedia;
+import application.media.MediaCopy;
+import application.media.Movie;
 
 public class LibraryStorageManager {
 	private String path;
@@ -66,7 +72,10 @@ public class LibraryStorageManager {
 		CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT);
 		printer.printRecord("Type", "ArticleNumber", "Title", "Value", "Pages/Length", // TODO
 				"Author/IMDB Rating");
-		for (LendableMedia media : lib.getStoredMedia()) {
+		Iterator<LendableMedia> storedMedia = lib.getStoredMediaIterator();
+		LendableMedia media;
+		while (storedMedia.hasNext()) {
+			media = storedMedia.next();
 			if (media instanceof Book) {
 				saveBookToCSV(printer, (Book) media);
 			} else if (media instanceof Movie) {
@@ -133,15 +142,15 @@ public class LibraryStorageManager {
 				// we then check for individual copies of the book expected to be stored
 				// consecutively after
 				while (records.get(i + 1).get(0).equals("COPY")) {
-					// advances the encompassing for-loop as well as these indexes wont be
+					// advances the encompassing for-loop as well, as these indexes wont be
 					// interesting outside this while-loop
 					i++;
-					MediaCopy copy = getMediaCopyFromRecord(records.get(i));
-					book.addNewCopy(copy);
+					MediaCopy copy = getMediaCopyFromRecord(records.get(i), book);
+					book.addCopy(copy);
 					if (copy.isBorrowed()) { // if borrowed register copy to borrower and borrower to library
 						Person borrower = copy.getBorrower();
 						borrower.addCopy(copy);
-						lib.getBorrowers().put(borrower.getName(), borrower);
+						lib.registerBorrower(borrower);
 					}
 				}
 				// same flow as for book in the if before here
@@ -150,12 +159,12 @@ public class LibraryStorageManager {
 				lib.addLendableMedia(movie);
 				while (records.get(i + 1).get(0).equals("COPY")) {
 					i++;
-					MediaCopy copy = getMediaCopyFromRecord(records.get(i));
-					movie.addNewCopy(copy);
+					MediaCopy copy = getMediaCopyFromRecord(records.get(i), movie);
+					movie.addCopy(copy);
 					if (copy.isBorrowed()) { // if borrowed register copy to borrower and borrower to library
 						Person borrower = copy.getBorrower();
 						borrower.addCopy(copy);
-						lib.getBorrowers().put(borrower.getName(), borrower);
+						lib.registerBorrower(borrower);
 					}
 				}
 			}
@@ -170,21 +179,21 @@ public class LibraryStorageManager {
 	 *         copies contain serialnumber, and potential Borrower, borrowers
 	 *         phonenumber
 	 */
-	private MediaCopy getMediaCopyFromRecord(CSVRecord copyRecord) {
+	private MediaCopy getMediaCopyFromRecord(CSVRecord copyRecord, LendableMedia media) {
 		if (copyRecord.get(2).equals("NOT BORROWED")) { // new to be checked first
-			return new MediaCopy(Integer.valueOf(copyRecord.get(1)));
+			return media.getCopy(Integer.valueOf(copyRecord.get(1)));
 		} else {
 			int serialNumber = Integer.valueOf(copyRecord.get(1));
 			String name = copyRecord.get(2);
 			String phonenumber = copyRecord.get(3);
 			Person person;
-			if (lib.getBorrowers().containsKey(name)) {
-				person = lib.getBorrowers().get(name);
+			if (lib.isPersonBorrowing(name)) {
+				person = lib.getBorrower(name);
 			} else {
 				person = new Person(name, phonenumber);
 			}
 			Date dueDate = new Date(Long.valueOf(copyRecord.get(4)));
-			return new MediaCopy(serialNumber, person, dueDate);
+			return media.getCopy(serialNumber, person, dueDate);
 		}
 	}
 

@@ -2,6 +2,10 @@ package application;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+
+import application.media.LendableMedia;
+import application.media.MediaCopy;
 
 public class Library {
 	private ArrayList<LendableMedia> storedMedia; // bad name maybe, even borrowed media is included
@@ -14,10 +18,11 @@ public class Library {
 		this.setBorrowers(new HashMap<String, Person>());
 		this.isSorted = false;
 	}
-	public ArrayList<LendableMedia> getStoredMedia() {
-		return storedMedia; //TODO could be changed from here! isSorted? return clone? Iterator
+	//TODO inconsistent to do this here
+	public void registerBorrower(Person borrower) {
+		getBorrowers().put(borrower.getName(), borrower);
 	}
-	public void setStoredMedia(ArrayList<LendableMedia> storedMedia) {
+	private void setStoredMedia(ArrayList<LendableMedia> storedMedia) {
 		this.storedMedia = storedMedia;
 		this.isSorted = false;
 	}
@@ -38,54 +43,55 @@ public class Library {
 		storedMedia.remove(media);
 	}
 	/**
-	 * 
 	 * @param media
 	 * @return true
 	 */
-	public void checkInCopy(LendableMedia media, int sn) {
+	public void checkInCopy(LendableMedia media, int sn) {	
 		if(media.getCopies().containsKey(sn)) {
 			MediaCopy copy = media.getCopies().get(sn);
 			Person person = copy.getBorrower();
-			copy.checkIn();
+			media.setCopyUnlent(sn);
 			if(!person.isBorrowing()) {
 				getBorrowers().remove(person.getName());
 			}
 		}
 	}
-	public Person findPerson(String name) {
-		for(LendableMedia media : getStoredMedia()) {
-			Person person = media.getBorrower(name);
-			if(person != null) {
-				return person;
-			}
-		}
-		return null;
+	public void checkOutCopy(LendableMedia media, Person borrower) {
+		media.setCopyToLent(borrower);
+		getBorrowers().put(borrower.getName(), borrower);
 	}
-	//TODO should return iterator!!
-	public LendableMedia getMedia(String articleNumber) {
-//		for(LendableMedia media : getStoredMedia()) {
-//				if(media.getArticleNr().equals(articleNumber)) {
-//					return media;
-//				}
-//			}
-//			return null;
-		//throw if null?
-		return storedMediaHash.get(articleNumber);
+	public boolean isLibraryEmpty() {
+		return getStoredMedia().size() == 0;
 	}
-	public boolean isExistingArticleNumber(String articleNumber) {
-//		for (LendableMedia media : getStoredMedia()) {
-//			if (media.getArticleNr().equals(articleNumber)) {
-//				return true;
-//			}
-//		}
-//		return false;
-		return storedMediaHash.containsKey(articleNumber);
+	public boolean isPersonBorrowing(String name) {
+		return getBorrowers().containsKey(name);
 	}
-	public HashMap<String, Person> getBorrowers() {
-		return borrowers;
-	}
-	public void setBorrowers(HashMap<String, Person> borrowers) {
-		this.borrowers = borrowers;
+	public Person getBorrower(String name) {
+		return getBorrowers().get(name);
 	}
 
+	public Person findPerson(String name) {
+		return getBorrowers().get(name);
+	}
+	public LendableMedia getMedia(String articleNumber) {
+		return storedMediaHash.get(articleNumber);
+	}
+	public Iterator<LendableMedia> getStoredMediaIterator() {
+		return getStoredMedia().iterator();
+	}
+	private ArrayList<LendableMedia> getStoredMedia() {
+		return storedMedia; //TODO could be changed from here! isSorted? return clone? Iterator
+	}
+	public Iterator<Person> getBorrowersIterator() {
+		return getBorrowers().values().iterator();
+	}
+	private void setBorrowers(HashMap<String, Person> borrowers) {
+		this.borrowers = borrowers;
+	}
+	private HashMap<String, Person> getBorrowers() {
+		return borrowers;
+	}
+	public boolean isExistingArticleNumber(String articleNumber) {
+		return storedMediaHash.containsKey(articleNumber);
+	}
 }

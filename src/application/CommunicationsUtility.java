@@ -1,7 +1,13 @@
 package application;
 
 import java.util.InputMismatchException;
+import java.util.Iterator;
 import java.util.Scanner;
+
+import application.media.Book;
+import application.media.LendableMedia;
+import application.media.MediaCopy;
+import application.media.Movie;
 
 /**
  * Somewhat arbitrary split between CommunicationsUtility and LibraryController,
@@ -29,7 +35,8 @@ public final class CommunicationsUtility {
 	public final static String MSG_ERROR_DOUBLECHECKOUT = "The item corresponding to the given article number is already checked out. ";
 	final static public String MSG_ERROR_NOTLENDED = "The item you are to check out is currently not lended out to anyone. ";
 	public final static String MSG_ERROR_DOUBLECHECKIN = "The item corresponding to the given article number is already checked in. ";
-	public final static String MSG_ERROR_UNKNOWNCOMMAND = "Java Console Library doesn't recognise \"*\" as a command. Type [help] to get [list] of available commands. "; //asterisk is meant to be replaced
+	// asterisk is meant to be replaced
+	public final static String MSG_ERROR_UNKNOWNCOMMAND = "Java Console Library doesn't recognise \"*\" as a command. Type [help] to get [list] of available commands. "; 
 	public final static String MSG_ERROR_INVALIDINPUT = "Invalid input. ";
 
 	public final static String QUERY_PROMPT = "> ";
@@ -43,16 +50,16 @@ public final class CommunicationsUtility {
 	public static final String QUERY_AUTHOR = "Author: ";
 	public static final String QUERY_LENGTH = "How many minutes: ";
 	public static final String QUERY_RATING = "What is the IMDB rating: ";
-
+	// asterisk is meant to be replaced
+	public final static String QUERY_REGISTER_NEWCOPY = "There is already a * registered with that article number. Would you like to register a new copy? [yes] or [no]. ";		
+	
 	public final static String MSG_WELCOME = "Hello and welcome to the Java Console Library! If this is the first time using this application you are recommended to type [help], this will give you the available commands. ";
 	public final static String MSG_REGISTER_SUCCESS = "Media successfully added to library database. Awaiting further commands: ";
 	public static final String MSG_DEREGISTER_SUCCESSFUL = "Item successfully deregistered. ";
-
-	public final static String INFO_GENERAL_ORIENTATION = "If you want information about how to use a particular command. Type [help] followed by the command. These are the available commands: "; // Incomplete,
-																																																		// needs
-																																																		// to
-	// completed in help()
-	// method!
+	public final static String MSG_REGISTER_CANCELLED = "Returning to main menu. No item registered. ";
+	
+	// Incomplete, need to completed in help() method!
+	public final static String INFO_GENERAL_ORIENTATION = "If you want information about how to use a particular command. Type [help] followed by the command. These are the available commands: "; 
 	public final static String INFO_LOANS = "The [loans] commands is used to view all currently lended items and information about the corresponding borrowers. ";
 	public final static String INFO_CHECKIN = "The [checkin] command is used to check in a lended item such as a book or a movie into the library. Checked in items are ready to be lended out again. ";
 	public final static String INFO_CHECKOUT = "The [checkout] command is used to check out an item such as a book or a movie from the library. Checked out items can't be lended again until they are returned and checked in. ";
@@ -67,40 +74,41 @@ public final class CommunicationsUtility {
 	private CommunicationsUtility() {
 	}
 
-	public static String queryType() {
-		System.out.println(QUERY_REGISTER_TYPE);
-		System.out.print(QUERY_PROMPT);
-		String input = getStringInput();
-		if (input.equals("BOOK") | input.equals("MOVIE")) {
-			return input;
-		} else {
-			System.out.println(MSG_ERROR_INVALIDINPUT);
-			return queryType();
-		}
-	}
-
 	public static void listLibraryContents(Library lib) { // TODO
-		lib.sortMedia();// TODO use proper capitalisation!
-
+		lib.sortMedia();
+		/*
+		 * We want to match the headers with the corresponding list items vertically. We
+		 * have headers Type|Article number|Title|Author/IMDBRating, since Type won't
+		 * point to any changing items(only Book and Movie it can be fixed. And since
+		 * Author/IMDBRating is last we don't need to determine how much space is needed
+		 * to line it up with next element. So we only have to check for longest
+		 * articleNumber and longest title!
+		 */
 		int maxArticleNumber = 14; // initial value == length of "Article Number"
 		int maxTitle = 5; // initial value == length of "Title"
-		for (LendableMedia media : lib.getStoredMedia()) {
+		Iterator<LendableMedia> storedMedia = lib.getStoredMediaIterator();
+		LendableMedia media;
+		while (storedMedia.hasNext()) {
+			media = storedMedia.next();
 			if (media.getArticleNr().length() > maxArticleNumber)
 				maxArticleNumber = media.getArticleNr().length();
 			if (media.getTitle().length() > maxTitle)
 				maxTitle = media.getTitle().length();
 		}
 		listHeaders(maxArticleNumber, maxTitle);
-		if (lib.getStoredMedia().size() == 0) {
+		if (lib.isLibraryEmpty()) {
 			listEmptyList();
 		} else {
-			for (LendableMedia media : lib.getStoredMedia()) {
+			storedMedia = lib.getStoredMediaIterator();
+			while (storedMedia.hasNext()) {
+				media = storedMedia.next();
 				if (media instanceof Book) {
 					listBook(maxArticleNumber, maxTitle, (Book) media);
 				} else if (media instanceof Movie) {
 					listMovie(maxArticleNumber, maxTitle, (Movie) media);
 				}
-				listStock(media);}
+				listStock(media);
+			}
 		}
 		System.out.println();
 	}
@@ -108,14 +116,14 @@ public final class CommunicationsUtility {
 	private static void listHeaders(int maxArticleNumber, int maxTitle) {
 		System.out.println();
 		System.out.printf("%-7s", "Type:");
-		System.out.printf("%-" + (maxArticleNumber + 2) + "s", "Article number:"); // TODO?
+		System.out.printf("%-" + (maxArticleNumber + 2) + "s", "Article number:");
 		System.out.printf("%-" + (maxTitle + 2) + "s", "Title:");
 		System.out.printf("%-20s", "Author/IMDBRating:");
 	}
 
 	private static void listEmptyList() {
 		System.out.println();
-		System.out.println("-Library is empty. "); // TODO??
+		System.out.println("-Library is empty. ");
 	}
 
 	private static void listBook(int maxArticleNumber, int maxTitle, Book media) {
@@ -123,7 +131,7 @@ public final class CommunicationsUtility {
 		System.out.printf("%-7s", "Book");
 		System.out.printf("%-" + (maxArticleNumber + 2) + "s", media.getArticleNr());
 		System.out.printf("%-" + (maxTitle + 2) + "s", media.getTitle());
-		System.out.printf("%-20s", media.getAuthor());
+		System.out.printf("%-20s", upperCaseInitials(media.getAuthor()));
 	}
 
 	private static void listMovie(int maxArticleNumber, int maxTitle, Movie media) {
@@ -136,12 +144,46 @@ public final class CommunicationsUtility {
 
 	private static void listBorrower(MediaCopy copy) {
 		System.out.println();
-		System.out.print("	(Borrowed by: " + copy.getBorrower().getName() + ", Phonenumber: "
+		System.out.print("	(Borrowed by: " + upperCaseInitials(copy.getBorrower().getName()) + ", Phonenumber: "
 				+ copy.getBorrower().getPhoneNr() + ", Due to be returned: " + copy.getDueDate() + ")");
 	}
+
+	/**
+	 * Return a string with capitalised initials and all other letters in lower case
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public static String upperCaseInitials(String name) {
+		String[] names;
+		String firstLetter;
+		name = name.toLowerCase();
+		names = name.split("[ ]");
+		name = "";
+		for (String word : names) {
+			firstLetter = String.valueOf(word.charAt(0));
+			name += " " + word.replaceFirst(firstLetter, firstLetter.toUpperCase());
+		}
+		return name.trim();
+	}
+
 	private static void listStock(LendableMedia media) {
 		System.out.println();
-		System.out.println("	-Total stock: (" + media.getNumberOfCopies() + ") Available: (" + media.getNumberOfAvailableCopies() + ") Lent out: (" + media.getNumberOfLendedCopies() + ") Expired loans: (" + media.getNumberOfExpiredLoans() + ") ");
+		System.out.println("	-Total stock: (" + media.getNumberOfCopies() + ") Available: ("
+				+ media.getNumberOfAvailableCopies() + ") Lent out: (" + media.getNumberOfLendedCopies()
+				+ ") Expired loans: (" + media.getNumberOfExpiredLoans() + ") ");
+	}
+
+	public static String queryType() {
+		System.out.println(QUERY_REGISTER_TYPE);
+		System.out.print(QUERY_PROMPT);
+		String input = getStringInput();
+		if (input.equals("BOOK") | input.equals("MOVIE")) {
+			return input;
+		} else {
+			System.out.println(MSG_ERROR_INVALIDINPUT);
+			return queryType();
+		}
 	}
 
 	public static String queryPhoneNumber() {
@@ -166,10 +208,6 @@ public final class CommunicationsUtility {
 		System.out.println(QUERY_ARTICLENUMBER);
 		System.out.print(QUERY_PROMPT);
 		String input = getStringInput();
-//		if (lib.isExistingArticleNumber(input)) {
-//			System.out.println(MSG_ERROR_DOUBLEREGISTER);
-//			return queryArticleNumber(lib);
-//		} TODO
 		if (!CommandInterpreter.isNumber(input)) {
 			System.out.println(MSG_ERROR_INVALIDINPUT);
 			return queryArticleNumber(lib);
@@ -177,7 +215,7 @@ public final class CommunicationsUtility {
 		return input;
 	}
 
-	public static String queryTitle() { //TODO should be first so that we can check if its already added
+	public static String queryTitle() { // TODO should be first so that we can check if its already added
 		System.out.println(QUERY_TITLE);
 		System.out.print(QUERY_PROMPT);
 		return getStringInput();

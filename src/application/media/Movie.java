@@ -1,19 +1,26 @@
-package application;
+package application.media;
 
 import java.util.HashMap;
+import java.util.Iterator;
+
+import application.Library;
 
 public class Movie extends LendableMedia {
 	private int length; // length in minutes
-	private double IMDBRating; //rating with one decimal up to 10,0 TODO
+	private double IMDBRating; // rating with one decimal up to 10,0 TODO
 
 	private Movie(String articleNumber) {
 		this.setInitialised(false);
 		this.setArticleNr(articleNumber);
 	}
 
-	// throw exception if book not found? throw exception if movie with same articleNumber?
-	public static Movie getMovie(String articleNumber, Library lib) { 
-		for (LendableMedia media : lib.getStoredMedia()) {
+	// throw exception if book not found? throw exception if movie with same
+	// articleNumber?
+	public static Movie getMovie(String articleNumber, Library lib) {
+		Iterator<LendableMedia> storedMedia = lib.getStoredMediaIterator();
+		LendableMedia media;
+		while (storedMedia.hasNext()) {
+			media = storedMedia.next();
 			if (media.getArticleNr().equals(articleNumber)) {
 				if (media instanceof Movie) {
 					return (Movie) media;
