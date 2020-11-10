@@ -44,14 +44,13 @@ public class DialogueManager {
 		Iterator<LendableMedia> storedMedia = LibraryController.lib.getStoredMediaIterator();
 		ArrayList<MediaCopy> expiredCopies;
 		LendableMedia media;
+		System.out.println();
+		System.out.println("The following loans are due to be returned by now: ");
 		while (storedMedia.hasNext()) {
 			media = storedMedia.next();
 			expiredCopies = media.getExpiredCopies();
-			System.out.println("The following loans are due to be returned by now: ");
 			if (expiredCopies.size() > 0) {
-				for (MediaCopy copy : expiredCopies) {
-					System.out.println();
-					
+				for (MediaCopy copy : expiredCopies) {		
 					System.out.print(media.getTitle() + " - Borrowed by: " + copy.getBorrower().getName() + " Their phonenumber: " + copy.getBorrower().getPhoneNr()+ " Loan due by: " + copy.getDueDate());	
 				}
 			}
