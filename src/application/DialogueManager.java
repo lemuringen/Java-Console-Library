@@ -47,10 +47,11 @@ public class DialogueManager {
 		while (storedMedia.hasNext()) {
 			media = storedMedia.next();
 			expiredCopies = media.getExpiredCopies();
+			System.out.println("The following loans are due to be returned by now: ");
 			if (expiredCopies.size() > 0) {
 				for (MediaCopy copy : expiredCopies) {
 					System.out.println();
-					System.out.println("The following loans are due to be returned by now: ");
+					
 					System.out.print(media.getTitle() + " - Borrowed by: " + copy.getBorrower().getName() + " Their phonenumber: " + copy.getBorrower().getPhoneNr()+ " Loan due by: " + copy.getDueDate());	
 				}
 			}
@@ -274,7 +275,7 @@ public class DialogueManager {
 		System.out.println("Would you like to deregister an individual [copy] or [all] copies of *? ".replace("*",
 				media.getTitle()));
 		do {
-			System.out.println(CommunicationsUtility.QUERY_PROMPT);
+			System.out.print(CommunicationsUtility.QUERY_PROMPT);
 			String answer = CommunicationsUtility.getStringInput();
 			if (answer.equalsIgnoreCase("copy")) {
 				validInput = true;
@@ -330,7 +331,7 @@ public class DialogueManager {
 		listCopies(media); // list all copies with their serialnumbers
 		int sn = -1; // (to init)should be impossible to get this serialnumber
 		do {
-			System.out.println(CommunicationsUtility.QUERY_PROMPT);
+			System.out.print(CommunicationsUtility.QUERY_PROMPT);
 			String input = CommunicationsUtility.getStringInput();
 			// we need to check if it's a number before converting
 			if (CommunicationsUtility.isNumber(input)) {
@@ -476,7 +477,7 @@ public class DialogueManager {
 
 	public String queryYesOrNo() {
 		System.out.println("[yes] or [no]");
-		System.out.println(CommunicationsUtility.QUERY_PROMPT);
+		System.out.print(CommunicationsUtility.QUERY_PROMPT);
 		String input = CommunicationsUtility.getStringInput();
 		if (input.equalsIgnoreCase("yes")) {
 			return "yes";

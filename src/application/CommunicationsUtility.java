@@ -11,12 +11,8 @@ import application.media.MediaCopy;
 import application.media.Movie;
 
 /**
- * Somewhat arbitrary split between CommunicationsUtility and LibraryController,
- * but methods contained here are supposed to be not directly related to
- * commands and error. All text is stored here.
+ * Utility methods and dialogue.
  * 
- * @author Lemu
- *
  */
 public final class CommunicationsUtility {
 
@@ -37,7 +33,7 @@ public final class CommunicationsUtility {
 	public final static String MSG_ERROR_NOTLENDED = "The item you are to check in is currently not lended out to anyone. ";
 	public final static String MSG_ERROR_DOUBLECHECKIN = "The item corresponding to the given article number is already checked in. ";
 	public final static String MSG_ERROR_LOANS_NONREGISTERED = " is not currently borrowing anything from Java Console Library. Type [loans] if you want to see all current loans. Returning to main menu. ";
-	// asterisk is meant to be replaced
+	// asterisk is meant to be replaced TODO printf
 	public final static String MSG_ERROR_UNKNOWNCOMMAND = "Java Console Library doesn't recognise \"*\" as a command. Type [help] to get [list] of available commands. "; 
 	public final static String MSG_ERROR_INVALIDINPUT = "Invalid input. ";
 	public final static String MSG_ERROR_UNEXPECTED_IOEXCEPTION = "Unexpected I/O exception. Try deleting the library folder and see to it that Java Console Library is executed in a place it has read/write permissions in. Shutting down... ";
@@ -66,7 +62,7 @@ public final class CommunicationsUtility {
 	
 	// Incomplete, need to completed in help() method!
 	public final static String INFO_GENERAL_ORIENTATION = "If you want information about how to use a particular command. Type [help] followed by the command. These are the available commands: "; 
-	public final static String INFO_LOANS = "The [loans] commands is used to view all currently lended items and information about the corresponding borrowers. ";
+	public final static String INFO_LOANS = "The [loans] commands is used to view all currently lended items and information about the corresponding borrowers. It can be used alone or with a borrower as argument or with [-expired] as argument. Argumenting with [-expired] will give all expired loans. ";
 	public final static String INFO_CHECKIN = "The [checkin] command is used to check in a lended item such as a book or a movie into the library. Checked in items are ready to be lended out again. ";
 	public final static String INFO_CHECKOUT = "The [checkout] command is used to check out an item such as a book or a movie from the library. Checked out items can't be lended again until they are returned and checked in. ";
 	public final static String INFO_INFO = "The [info] command is used to view extended information about a particular item in the library database. ";
