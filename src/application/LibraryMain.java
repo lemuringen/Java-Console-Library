@@ -8,8 +8,5 @@ public class LibraryMain {
 		LibraryController libController = new LibraryController(lib);
 		libController.init();
 		libController.start();
-		while (libController.isRunning()) {
-			libController.queryUserAction();
-		}
 	}
 }

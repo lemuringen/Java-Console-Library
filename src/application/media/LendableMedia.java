@@ -3,6 +3,7 @@ package application.media;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import application.Library;
 import application.Person;
@@ -22,27 +23,8 @@ public abstract class LendableMedia {
 	private HashMap<Integer, MediaCopy> copies;
 	private boolean isInitialised;
 
-//
-//	public void addNewCopy(MediaCopy copy) throws OverStockedException {
-//		MediaCopy copy;
-//		if (getCopies().size() == 0) {
-//			copy = new MediaCopy(0);
-//			getCopies().put(copy.getSerialNumber(), copy);
-//		} else {
-//			int maxCopies = 1000000;
-//			for (int i = 0; i < maxCopies; i++) {
-//				if (!getCopies().containsKey(i)) {
-//					copy = new MediaCopy(i);
-//					getCopies().put(copy.getSerialNumber(), copy);
-//					i = maxCopies + 1;
-//				}
-//				if (i == maxCopies) {
-//					throw new OverStockedException("A media can't store more than " + maxCopies + ".");
-//				}
-//			}
-//
-//		}
-//	}
+	public abstract String detailedInfo();
+
 /**
  * Makes a new MediaCopy with unique serialnumber.
  * @return
@@ -79,11 +61,35 @@ public abstract class LendableMedia {
 	 * @return
 	 */
 	public MediaCopy getCopy(int serialNumber, Person borrower, Date dueDate) {
-		MediaCopy copy = getCopy(serialNumber);
-		copy.setBorrower(borrower);
-		copy.setDueDate(dueDate);
+		MediaCopy copy = new MediaCopy(serialNumber, borrower, dueDate);
 		return copy;
 	}
+	/**Sets the copy to its lended state. Is meant for new loans, to instantiate an already ongoing loan
+	 * use getCopy(int,Person,Date).
+	 * 
+	 * @param borrower the person borrowing the media.
+	 * @return Returns true if checkout successful false if not.
+	 */
+		public void setCopyToLent(Person borrower) { //TODO fix name
+			if (isInStock()) {
+				long millisFourWeeks = 2419200000L; // four weeks in milliseconds
+				long millisCurrent = System.currentTimeMillis();
+				MediaCopy copy = getAvailableCopy();
+				copy.setDueDate(new Date(millisCurrent + millisFourWeeks));
+				copy.setBorrower(borrower);
+				copy.setDue(true);
+			}
+		}
+		/**
+		 * Resets the copy to its unlended state.
+		 * @param serialNumber
+		 */
+		public void setCopyUnlent(int serialNumber) {
+			MediaCopy copy = getCopy(serialNumber);
+			copy.setBorrower(null);
+			copy.setDueDate(null);
+			copy.setDue(false);
+		}
 /**
  * Register a copy with the media.
  * @param copy
@@ -94,8 +100,9 @@ public abstract class LendableMedia {
 	public void removeCopy(int serialNumber) {
 		getCopies().remove(serialNumber);
 	}
-
-	public abstract String generalInfo();
+	public boolean isExistingCopy(int serialNumber) {
+		return getCopies().containsKey(serialNumber);
+	}
 
 	public String getArticleNr() {
 		return articleNr;
@@ -105,12 +112,29 @@ public abstract class LendableMedia {
 	public void setArticleNr(String articleNr) {
 		this.articleNr = articleNr;
 	}
-
+/**
+ * Get Person from personal name.
+ * @param name
+ * @return
+ */
 	public Person getBorrower(String name) {
 		for (MediaCopy copy : getCopies().values()) {
 			Person borrower = copy.getBorrower();
-			if (borrower.getName().equalsIgnoreCase(name)) {
+			if (borrower != null && borrower.getName().equalsIgnoreCase(name)) {
 				return borrower;
+			}
+		}
+		return null;
+	}
+	/**
+	 * Get MediaCopy from personal name.
+	 * @param name
+	 * @return
+	 */
+	public MediaCopy getBorrowedCopy(String name) {
+		for (MediaCopy copy : getCopies().values()) {
+			if (name.equalsIgnoreCase(copy.getBorrower().getName())) {
+				return copy;
 			}
 		}
 		return null;
@@ -242,36 +266,7 @@ public abstract class LendableMedia {
 			return true;
 		}
 	}
-/**Sets the copy to its lended state.
- * 
- * @param borrower the person borrowing the media.
- * @return Returns true if checkout successful false if not.
- */
-	public boolean setCopyToLent(Person borrower) { //TODO what if we are reseting from memory
-		if (isInStock()) {
-			long millisFourWeeks = 2419200000L; // four weeks in milliseconds
-			long millisCurrent = System.currentTimeMillis();
-			MediaCopy copy = getAvailableCopy();
-			copy.setDueDate(new Date(millisCurrent + millisFourWeeks));
-			copy.setBorrower(borrower);
-			copy.setDue(true);
-			borrower.getBorrowedCopy().add(copy);
-			return true;
-		}else {
-			return false;
-		}
-	}
-	/**
-	 * Resets the copy to its unlended state.
-	 * @param serialNumber
-	 */
-	public void setCopyUnlent(int serialNumber) {
-		MediaCopy copy = getCopy(serialNumber);
-		copy.getBorrower().removeCopy(copy);
-		copy.setBorrower(null);
-		copy.setDueDate(null);
-		copy.setDue(false);
-	}
+
 	/**Which copy is supposed to be turned in the soonest?
 	 * 
 	 * @return
@@ -292,11 +287,14 @@ public abstract class LendableMedia {
 		return null;
 	}
 
-	public HashMap<Integer, MediaCopy> getCopies() {
+	private HashMap<Integer, MediaCopy> getCopies() {
 		return copies;
 	}
+	public Iterator<MediaCopy> getCopyIterator(){
+		return getCopies().values().iterator();
+	}
 
-	public void setCopies(HashMap<Integer, MediaCopy> copies) {
+protected void setCopies(HashMap<Integer, MediaCopy> copies) {
 		this.copies = copies;
 	}
 
@@ -307,5 +305,4 @@ public abstract class LendableMedia {
 	public void setInitialised(boolean isInitialised) {
 		this.isInitialised = isInitialised;
 	}
-
 }

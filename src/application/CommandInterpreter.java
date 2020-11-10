@@ -1,8 +1,5 @@
 package application;
 
-
-import java.util.regex.Pattern;
-
 /**
  * Extracts commands from strings and checks for general errors pertaining to
  * the extracted command. Does not compare command arguments with library
@@ -29,24 +26,23 @@ public class CommandInterpreter {
 
 	public void processCommand() {
 		// dependent on check order, help needs to be first as it can be combined with
-		// other commands, TODO should change input to splitInput[0], maybe use regex (check for general whitespace characters?)
-		if (input.contains(Command.HELP.name() + " ") || input.contains(" " + Command.HELP.name()) || input.contains(" " + Command.HELP.name() + " ") || splitInput[0].equals(Command.HELP.name())) {
+		if (input.matches("\\b" + Command.HELP.name + "\\b")) {
 			help();
-		} else if (input.contains(Command.CHECKOUT.name() + " ") || input.contains(" " + Command.CHECKOUT.name()) || input.contains(" " + Command.CHECKOUT.name() + " ") || splitInput[0].equals(Command.CHECKOUT.name())) { 
+		} else if (splitInput[0].matches("\\b" + Command.CHECKOUT.name + "\\b")) { 
 			checkOut();
-		} else if (input.contains(Command.DEREGISTER.name() + " ") || input.contains(" " + Command.DEREGISTER.name()) || input.contains(" " + Command.DEREGISTER.name() + " ") || splitInput[0].equals(Command.DEREGISTER.name())) {		
+		} else if (splitInput[0].matches("\\b" + Command.DEREGISTER.name + "\\b")) {		
 			deregister();
-		} else if (input.contains(Command.REGISTER.name() + " ") || input.contains(" " + Command.REGISTER.name()) || input.contains(" " + Command.REGISTER.name() + " ")|| splitInput[0].equals(Command.REGISTER.name())) {
+		} else if (splitInput[0].matches("\\b" + Command.REGISTER.name + "\\b")) {
 			register();
-		} else if (input.contains(Command.INFO.name() + " ") || input.contains(" " + Command.INFO.name()) || input.contains(" " + Command.INFO.name() + " ") || splitInput[0].equals(Command.INFO.name())) {
+		} else if (splitInput[0].matches("\\b" + Command.INFO.name + "\\b")) {
 			info();
-		} else if (input.contains(Command.LIST.name() + " ") || input.contains(" " + Command.LIST.name()) || input.contains(" " + Command.LIST.name() + " ") || splitInput[0].equals(Command.LIST.name())) {
+		} else if (splitInput[0].matches("\\b" + Command.LIST.name + "\\b")) {
 			list();
-		} else if (input.contains(Command.QUIT.name() + " ") || input.contains(" " + Command.QUIT.name()) || input.contains(" " + Command.QUIT.name() + " ") || splitInput[0].equals(Command.QUIT.name())) {
+		} else if (splitInput[0].matches("\\b" + Command.QUIT.name + "\\b")) {
 			quit();
-		} else if (input.contains(Command.CHECKIN.name() + " ") || input.contains(" " + Command.CHECKIN.name()) || input.contains(" " + Command.CHECKIN.name() + " ") || splitInput[0].equals(Command.CHECKIN.name())) {
+		} else if (splitInput[0].matches("\\b" + Command.CHECKIN.name + "\\b")) {
 			checkIn();
-		} else if(input.contains(Command.LOANS.name() + " ") || input.contains(" " + Command.LOANS.name()) || input.contains(" " + Command.LOANS.name() + " ") || splitInput[0].equals(Command.LOANS.name())){
+		} else if(splitInput[0].matches("\\b" + Command.LOANS.name + "\\b")){
 			loans();
 		}else {
 			unknownCommand();
@@ -54,12 +50,14 @@ public class CommandInterpreter {
 	}
 	public void loans() {
 		this.setCommand(Command.LOANS);
-		if (input.equals(Command.LOANS.name())) { // no errors
+		if (input.equals(Command.LOANS.name)) { // no errors
 			this.setError(Error.NO_ERROR);
-		} else if(splitInput.length > 1 && onlyLetters(getArgument())){
+		} else if(splitInput.length > 1 && (CommunicationsUtility.onlyLetters(getArgument()))){
+			this.setError(Error.NO_ERROR);
+		}else if(splitInput.length == 2 && splitInput[1].equalsIgnoreCase("-expired")) {
 			this.setError(Error.NO_ERROR);
 		}
-		else{this.setError(Error.LOANS_ARGUMENT); // should not have arguments
+		else{this.setError(Error.LOANS_ARGUMENT); //bad arguments
 		}
 	}
 
@@ -70,9 +68,9 @@ public class CommandInterpreter {
 
 	public void help() { // works both without and with arguments
 		this.setCommand(Command.HELP);
-		if (input.equals(Command.HELP.name())) { // no errors
+		if (input.equalsIgnoreCase(Command.HELP.name)) { // no errors
 			this.setError(Error.NO_ERROR);
-		} else if (splitInput.length == 2 && splitInput[0].equals(Command.HELP.name()) && isUsableCommand(splitInput[1])) {
+		} else if (splitInput.length == 2 && splitInput[0].equals(Command.HELP.name) && isUsableCommand(splitInput[1])) {
 			this.setError(Error.NO_ERROR);
 		} 
 		else if (splitInput.length > 2 || (splitInput.length == 2 && !isUsableCommand(splitInput[1]))) {
@@ -85,7 +83,7 @@ public class CommandInterpreter {
 
 	public void quit() { // exit application
 		this.setCommand(Command.QUIT);
-		if (input.equals(Command.QUIT.name())) { // no errors
+		if (input.equals(Command.QUIT.name)) { // no errors
 			this.setError(Error.NO_ERROR);
 		} else{
 			this.setError(Error.QUIT_ARGUMENT); // should not have arguments
@@ -94,14 +92,14 @@ public class CommandInterpreter {
 
 	public void checkIn() { // checkin a lended book back to the library
 		this.setCommand(Command.CHECKIN);
-		if (splitInput.length == 2 && splitInput[0].equals(Command.CHECKIN.name()) && isNumber(splitInput[1])) { // no
+		if (splitInput.length == 2 && splitInput[0].equals(Command.CHECKIN.name) && CommunicationsUtility.isNumber(splitInput[1])) { // no
 																													// errors
 
 			this.setError(Error.NO_ERROR);
 		} else if (splitInput.length == 1) { // no argument or improper placement of argument
 
 			this.setError(Error.CHECKIN_NO_ARGUMENT);
-		} else if (splitInput.length > 2 || (splitInput.length == 2 && !isNumber(splitInput[1]))) { // too many
+		} else if (splitInput.length > 2 || (splitInput.length == 2 && !CommunicationsUtility.isNumber(splitInput[1]))) { // too many
 																									// arguments or non
 																									// digits used in
 																									// argument
@@ -114,11 +112,11 @@ public class CommandInterpreter {
 
 	public void checkOut() { // checkout a book to a new lender(person object)
 		this.setCommand(Command.CHECKOUT);
-		if (splitInput.length == 2 && splitInput[0].equals(Command.CHECKOUT.name()) && isNumber(splitInput[1])) {
+		if (splitInput.length == 2 && splitInput[0].equals(Command.CHECKOUT.name) && CommunicationsUtility.isNumber(splitInput[1])) {
 			this.setError(Error.NO_ERROR);
 		} else if (splitInput.length == 1) { // no argument or improper placement of argument
 			this.setError(Error.CHECKOUT_NO_ARGUMENT);
-		} else if (splitInput.length > 2 || (splitInput.length == 2 && !isNumber(splitInput[1]))) { // too many
+		} else if (splitInput.length > 2 || (splitInput.length == 2 && !CommunicationsUtility.isNumber(splitInput[1]))) { // too many
 																									// arguments or non
 																									// digits used in
 																									// argument
@@ -139,12 +137,12 @@ public class CommandInterpreter {
 
 	public void deregister() { // remove media from library
 		this.setCommand(Command.DEREGISTER);
-		if (splitInput.length == 2 && splitInput[0].equals(Command.DEREGISTER.name()) && isNumber(splitInput[1])) {
+		if (splitInput.length == 2 && splitInput[0].equals(Command.DEREGISTER.name) && CommunicationsUtility.isNumber(splitInput[1])) {
 
 			this.setError(Error.NO_ERROR);
 		} else if (splitInput.length == 1) { // no argument or improper placement of argument
 			this.setError(Error.DEREGISTER_NO_ARGUMENT);
-		} else if (splitInput.length > 2 || (splitInput.length == 2 && !isNumber(splitInput[1]))) { // too many
+		} else if (splitInput.length > 2 || (splitInput.length == 2 && !CommunicationsUtility.isNumber(splitInput[1]))) { // too many
 																									// arguments or non
 																									// digits used in
 																									// argument
@@ -156,7 +154,7 @@ public class CommandInterpreter {
 
 	public void register() { // add a media to library
 		this.setCommand(Command.REGISTER);
-		if (input.equals(Command.REGISTER.name())) {
+		if (input.equals(Command.REGISTER.name)) {
 			this.setError(Error.NO_ERROR);
 		} else {
 			this.setError(Error.REGISTER_ARGUMENT); // should not have arguments
@@ -165,11 +163,11 @@ public class CommandInterpreter {
 
 	public void info() { // get in depth info about a media
 		this.setCommand(Command.INFO);
-		if (splitInput.length == 2 && splitInput[0].equals(Command.INFO.name()) && isNumber(splitInput[1])) {
+		if (splitInput.length == 2 && splitInput[0].equals(Command.INFO.name) && CommunicationsUtility.isNumber(splitInput[1])) {
 			this.setError(Error.NO_ERROR);
 		} else if (splitInput.length == 1) { // no argument or improper placement of argument
 			this.setError(Error.INFO_NO_ARGUMENT);
-		} else if (splitInput.length > 2 || (splitInput.length == 2 && !isNumber(splitInput[1]))) { // too many
+		} else if (splitInput.length > 2 || (splitInput.length == 2 && !CommunicationsUtility.isNumber(splitInput[1]))) { // too many
 																									// arguments or non
 																									// digits used in
 																									// argument
@@ -181,7 +179,7 @@ public class CommandInterpreter {
 
 	private boolean isUsableCommand(String argument) {
 		Command[] commands = Command.values();
-		if (argument.equals(Command.UNKNOWN_COMMAND.name())) { // UNKNOWN_COMMAND is not meant to be used by user
+		if (argument.equals(Command.UNKNOWN_COMMAND.name)) { // UNKNOWN_COMMAND is not meant to be used by user
 			return false;
 		}
 		for (Command command : commands) {
@@ -192,26 +190,7 @@ public class CommandInterpreter {
 		}
 		return false; // no matches
 	}
-/**
- * Determine whether a string consists of digits and nothing more.
- * @param number
- * @return True if only numbers, false otherwise.
- */
-public static boolean isNumber(String number) {
-		if (number.length() == 0 || number == null)
-			return false; // without this check empty strings [""] will return true
-		return Pattern.matches("^[\\d]+$", number);
-	}
-/**
- * Determine whether a string consists of letters ("\p{L}" categorised in unicode to letter category) and whitespace characters and nothing else.
- * @param name
- * @return True if only letters and whitespace characters, false otherwise.
- */
-public static boolean onlyLetters(String letters) {
-	if (letters.length() == 0 || letters == null)
-		return false; 
-	return Pattern.matches("^[\\p{L} ]+$", letters);
-}
+
 /**
  * Crops the first word (expected to be a command) from instance variable input 
  * (expected to be user direction to the program), as such only the argument

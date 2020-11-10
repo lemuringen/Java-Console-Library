@@ -14,7 +14,7 @@ public class Movie extends LendableMedia {
 		this.setArticleNr(articleNumber);
 	}
 
-	// throw exception if book not found? throw exception if movie with same
+	// throw exception if movie not found? throw exception if movie with same
 	// articleNumber?
 	public static Movie getMovie(String articleNumber, Library lib) {
 		Iterator<LendableMedia> storedMedia = lib.getStoredMediaIterator();
@@ -56,8 +56,8 @@ public class Movie extends LendableMedia {
 	}
 
 	@Override
-	public String generalInfo() {
-		return "(Movie) " + getTitle() + "\nValue: " + getValue() + "kr \nLength: " + getLength() + "m \nRating: "
+	public String detailedInfo() {
+		return "Type: Movie\nTitle: " + getTitle() + "\nValue: " + getValue() + "kr \nLength: " + getLength() + "m \nRating: "
 				+ getIMDBRating();
 	}
 

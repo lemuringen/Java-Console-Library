@@ -56,8 +56,8 @@ public class Book extends LendableMedia {
 
 
 	@Override
-	public String generalInfo() {
-		return "(BOOK) " + getTitle() + "\nValue: " + getValue() + "kr \nPages: " + getPages() + "\nAuthor: "
+	public String detailedInfo() {
+		return "Type: Book\nTitle: " + getTitle() + "\nValue: " + getValue() + "kr \nPages: " + getPages() + "\nAuthor: "
 				+ getAuthor();
 	}
 

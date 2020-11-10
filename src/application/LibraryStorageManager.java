@@ -39,15 +39,31 @@ public class LibraryStorageManager {
 	public void init() {
 		File contents = new File(path + "/" + fileName);
 		try {
+			System.out.println("Setting up library path...");
+			/*
+			 * gotta give segmentation room for our - soon to be released - highly optimised
+			 * enterprise solution with 50% faster loading
+			 */
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
 			makeStorageFolder();
 			if (!contents.exists() | contents.isDirectory()) {
+				System.out.println("Setting up library storage file...");
 				storeLibrary();
+			}
+			System.out.println("Loading library from file...");
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
 			}
 			loadLibrary();
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.out.println(
-					"Unexpected I/O exception. Try deleting the library folder and see to it that Java Console Library is installed in a place it has read/write permissions in. Shutting down... "); // TODO
+			System.out.println(CommunicationsUtility.MSG_ERROR_UNEXPECTED_IOEXCEPTION);
 			System.exit(1);
 		}
 	}
@@ -91,9 +107,12 @@ public class LibraryStorageManager {
 		// saves book
 		printer.printRecord("BOOK", book.getArticleNr(), book.getTitle(), book.getValue(), book.getPages(),
 				book.getAuthor());
-		if (book.getCopies().size() > 0) {
+		if (book.hasCopy()) {
 			// saves the individual copies of the book
-			for (MediaCopy copy : book.getCopies().values()) {
+			Iterator<MediaCopy> copies = book.getCopyIterator();
+			MediaCopy copy;
+			while (copies.hasNext()) {
+				copy = copies.next();
 				// is the book borrowed? then we print Person and Date object to .csv
 				if (copy.isBorrowed()) {
 					printer.printRecord("COPY", copy.getSerialNumber(), copy.getBorrower().getName(),
@@ -110,8 +129,11 @@ public class LibraryStorageManager {
 	private void saveMovieToCSV(CSVPrinter printer, Movie movie) throws IOException {
 		printer.printRecord("MOVIE", movie.getArticleNr(), movie.getTitle(), movie.getValue(), movie.getLength(),
 				movie.getIMDBRating());
-		if (movie.getCopies().size() > 0) {
-			for (MediaCopy copy : movie.getCopies().values()) {
+		if (movie.hasCopy()) {
+			Iterator<MediaCopy> copies = movie.getCopyIterator();
+			MediaCopy copy;
+			while (copies.hasNext()) {
+				copy = copies.next();
 				if (copy.isBorrowed()) {
 					printer.printRecord("COPY", copy.getSerialNumber(), copy.getBorrower().getName(),
 							copy.getBorrower().getPhoneNr(), copy.getDueDate().getTime());
@@ -147,13 +169,8 @@ public class LibraryStorageManager {
 					i++;
 					MediaCopy copy = getMediaCopyFromRecord(records.get(i), book);
 					book.addCopy(copy);
-					if (copy.isBorrowed()) { // if borrowed register copy to borrower and borrower to library
-						Person borrower = copy.getBorrower();
-						borrower.addCopy(copy);
-						lib.registerBorrower(borrower);
-					}
 				}
-				// same flow as for book in the if before here
+				// same flow as for book in the preceding if()
 			} else if (records.get(i).get(0).equals("MOVIE")) {
 				Movie movie = getMovieFromRecord(records.get(i));
 				lib.addLendableMedia(movie);
@@ -161,11 +178,6 @@ public class LibraryStorageManager {
 					i++;
 					MediaCopy copy = getMediaCopyFromRecord(records.get(i), movie);
 					movie.addCopy(copy);
-					if (copy.isBorrowed()) { // if borrowed register copy to borrower and borrower to library
-						Person borrower = copy.getBorrower();
-						borrower.addCopy(copy);
-						lib.registerBorrower(borrower);
-					}
 				}
 			}
 		}
@@ -186,8 +198,8 @@ public class LibraryStorageManager {
 			int serialNumber = Integer.valueOf(copyRecord.get(1));
 			String name = copyRecord.get(2);
 			String phonenumber = copyRecord.get(3);
-			Person person;
-			if (lib.isPersonBorrowing(name)) {
+			Person person = lib.getBorrower(name);
+			if (person != null) {
 				person = lib.getBorrower(name);
 			} else {
 				person = new Person(name, phonenumber);

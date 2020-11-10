@@ -3,7 +3,14 @@ package application.media;
 import java.sql.Date;
 
 import application.Person;
-
+/**
+ * This class represents specific copies of LendableMedia.
+ * As such there is a one-to-many relation from LendableMedia to MediaCopy.
+ * All MediaCopy object are supposed to have a unique serialnumber in
+ * relation to a specific LendableMedia object.
+ * @author Lemu
+ *
+ */
 public class MediaCopy {
 	private Person borrower;
 	private Date dueDate;
@@ -13,12 +20,7 @@ public class MediaCopy {
 	protected MediaCopy(int serialNumber) {
 		this(serialNumber, null, null);
 	}
-	/**should only be 
-	 * 
-	 * @param serialNumber
-	 * @param borrower
-	 * @param dueDate
-	 */
+
 	protected MediaCopy(int serialNumber, Person borrower, Date dueDate) {
 		this.serialNumber = serialNumber;
 		this.borrower = borrower;
