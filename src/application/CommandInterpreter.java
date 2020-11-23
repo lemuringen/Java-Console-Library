@@ -26,7 +26,7 @@ public class CommandInterpreter {
 
 	public void processCommand() {
 		// dependent on check order, help needs to be first as it can be combined with
-		if (input.matches("\\b" + Command.HELP.name + "\\b")) {
+		if (splitInput[0].matches("\\b" + Command.HELP.name + "\\b")) {
 			help();
 		} else if (splitInput[0].matches("\\b" + Command.CHECKOUT.name + "\\b")) { 
 			checkOut();
